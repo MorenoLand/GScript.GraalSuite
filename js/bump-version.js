@@ -41,7 +41,14 @@ function updateBuildConfig(version) {
   const file = path.join(root, 'build', 'config.yml');
   if (!fs.existsSync(file)) return;
   const text = fs.readFileSync(file, 'utf8');
-  fs.writeFileSync(file, text.replace(/productVersion:\s*[^\r\n]+/, `productVersion: ${version}`));
+  fs.writeFileSync(file, text.replace(/(\r?\n  version:\s*)[^\r\n]+/, `$1${version}`));
+}
+
+function updateLinuxPackageVersion(version) {
+  const file = path.join(root, 'build', 'linux', 'nfpm', 'nfpm.yaml');
+  if (!fs.existsSync(file)) return;
+  const text = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(file, text.replace(/(^version:\s*")[^"]+("\s*$)/m, `$1${version}$2`));
 }
 
 function updateWindowsResources(version) {
@@ -69,6 +76,7 @@ writeJson('package.json', pkg);
 
 updateGoVersion(nextVersion);
 updateBuildConfig(nextVersion);
+updateLinuxPackageVersion(nextVersion);
 updateWindowsResources(nextVersion);
 
 console.log(nextVersion);

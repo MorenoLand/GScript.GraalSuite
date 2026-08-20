@@ -868,16 +868,18 @@
             if (!document.querySelector('script[src="js/beautifytool.js"]')) { const bts = document.createElement('script'); bts.src = 'js/beautifytool.js'; document.head.appendChild(bts); }
             if (_isWails) { const ra = document.getElementById('btnRegisterAssoc'); if (ra) ra.style.display = ''; }
             if (_isWails) {
-                setTimeout(async () => {
+                const offerUpdate = async () => {
                     try {
                         const { check } = window.__GSUITE__.updater;
                         const update = await check();
                         if (update?.available) {
-                            const ok = confirm(`Update ${update.version} available. Install now?`);
-                            if (ok) { await window.__GSUITE__.core.invoke('do_update'); }
+                            const result = await window.openSharedConfirmDialog({ title: 'Update Available', message: `GSuite ${update.version} is available. Install now?` });
+                            if (result.confirmed) { await window.__GSUITE__.updater.doUpdate(); }
                         }
                     } catch(e) {}
-                }, 3000);
+                };
+                document.querySelectorAll('.btn-check-update').forEach(button => { button.style.display = ''; button.onclick = offerUpdate; });
+                setTimeout(offerUpdate, 3000);
             }
             if (_isWails) {
                 window.__GSUITE__.event.listen('open-file', e => {

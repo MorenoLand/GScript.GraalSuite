@@ -11,13 +11,17 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"github.com/wailsapp/wails/v3/pkg/updater"
-	"github.com/wailsapp/wails/v3/pkg/updater/providers/github"
+	"github.com/wailsapp/wails/v3/pkg/updater/providers/endpoint"
 )
 
 const appVersion = "0.1.84"
+const updaterManifestURL = "https://github.com/MorenoLand/GScript.GSuite/releases/latest/download/latest.json"
 
 //go:embed all:frontend
 var assets embed.FS
+
+//go:embed wails-updater.key.pub
+var updaterPublicKey []byte
 
 func main() {
 	if runtime.GOOS == "linux" {
@@ -28,9 +32,9 @@ func main() {
 	var mainWindow *application.WebviewWindow
 	app = newApplication(service, &mainWindow)
 	service.app = app
-	provider, err := github.New(github.Config{Repository: "MorenoLand/GScript.GSuite"})
+	provider, err := endpoint.New(endpoint.Config{URL: updaterManifestURL})
 	if err == nil {
-		if err := app.Updater.Init(updater.Config{CurrentVersion: appVersion, Providers: []updater.Provider{provider}}); err != nil {
+		if err := app.Updater.Init(updater.Config{CurrentVersion: appVersion, PublicKey: updaterPublicKey, Providers: []updater.Provider{provider}}); err != nil {
 			log.Printf("updater initialization failed: %v", err)
 		}
 	}

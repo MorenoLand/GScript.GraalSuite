@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -106,7 +108,57 @@ func (s *AppService) DoUpdate() error {
 	if err := s.app.Updater.DownloadAndInstall(ctx); err != nil {
 		return err
 	}
+	if runtime.GOOS == "linux" {
+		staged := s.app.Updater.DownloadedPath()
+		installPath, err := linuxUpdatePath(staged)
+		if err != nil {
+			return err
+		}
+		if err := copyFile(staged, installPath); err != nil {
+			return err
+		}
+		if err := exec.Command("xdg-open", installPath).Start(); err != nil {
+			return err
+		}
+		stagedDir := filepath.Dir(staged)
+		if strings.HasPrefix(filepath.Base(stagedDir), "wails-update-") {
+			_ = os.RemoveAll(stagedDir)
+		}
+		time.AfterFunc(250*time.Millisecond, s.app.Quit)
+		return nil
+	}
 	return s.app.Updater.Restart(ctx)
+}
+
+func linuxUpdatePath(staged string) (string, error) {
+	if staged == "" || filepath.Base(staged) == "." || filepath.Base(staged) == string(filepath.Separator) {
+		return "", fmt.Errorf("updater returned no staged artifact")
+	}
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(filepath.Join(cache, "GSuite", "updates"), 0700); err != nil {
+		return "", err
+	}
+	return filepath.Join(cache, "GSuite", "updates", filepath.Base(staged)), nil
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		_ = out.Close()
+		return err
+	}
+	return out.Close()
 }
 
 func (s *AppService) RegisterFileAssociations() (string, error) {

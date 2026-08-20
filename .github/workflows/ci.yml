@@ -26,15 +26,18 @@ jobs:
           - os: windows-latest
             goos: windows
             goarch: amd64
-            artifact: gsuite-windows-x64
+            artifact: gsuite-windows-amd64
+            output: bin/GSuite-windows-amd64.exe
           - os: macos-15-intel
             goos: darwin
             goarch: amd64
-            artifact: gsuite-macos-x64
+            artifact: gsuite-darwin-amd64
+            output: bin/GSuite-darwin-amd64.zip
           - os: ubuntu-24.04
             goos: linux
             goarch: amd64
-            artifact: gsuite-linux-x64
+            artifact: gsuite-linux-amd64
+            output: bin/GSuite-linux-amd64.deb
 
     steps:
       - uses: actions/checkout@v5
@@ -42,7 +45,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.14.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -56,36 +59,70 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Install Wails CLI
-        shell: pwsh
-        run: |
-          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.10
-          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path (go env GOPATH) 'bin')
-
-      - name: Install Node dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Install Linux WebView dependencies
         if: matrix.goos == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 
+      - name: Install Wails CLI (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.10
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path (go env GOPATH) 'bin')
+
+      - name: Install Wails CLI (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.10
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Install UPX
         if: matrix.goos == 'windows'
-        run: choco install upx -y --no-progress
+        shell: pwsh
+        run: |
+          choco install upx -y --no-progress
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path $env:ChocolateyInstall 'bin')
 
       - name: Build
         shell: bash
         run: wails3 build GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
 
-      - name: Upload artifact
+      - name: Package macOS app
+        if: matrix.goos == 'darwin'
+        shell: bash
+        run: |
+          set -euo pipefail
+          wails3 package GOOS=darwin GOARCH=amd64
+          test -d bin/GSuite.app
+          ditto -c -k --sequesterRsrc --keepParent bin/GSuite.app bin/GSuite-darwin-amd64.zip
+          test "$(zipinfo -1 bin/GSuite-darwin-amd64.zip | awk -F/ 'NF {print $1}' | sort -u | grep -c '^GSuite.app$')" -eq 1
+
+      - name: Package Linux deb
+        if: matrix.goos == 'linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          GOARCH=amd64 wails3 tool package -name GSuite -format deb -config ./build/linux/nfpm/nfpm.yaml -out ./bin
+          shopt -s nullglob
+          debs=(bin/*.deb)
+          test "${#debs[@]}" -eq 1
+          mv "${debs[0]}" bin/GSuite-linux-amd64.deb
+
+      - name: Name Windows executable
+        if: matrix.goos == 'windows'
+        shell: pwsh
+        run: Move-Item -LiteralPath bin\GSuite.exe -Destination bin\GSuite-windows-amd64.exe
+
+      - name: Upload exact CI artifact
         uses: actions/upload-artifact@v4
         with:
           name: ci-${{ matrix.artifact }}
           if-no-files-found: error
           retention-days: 7
-          path: |
-            bin/GSuite.exe
-            bin/GSuite
-            bin/GSuite.app
+          path: ${{ matrix.output }}

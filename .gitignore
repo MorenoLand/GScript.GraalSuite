@@ -12,6 +12,7 @@ Thumbs.db
 *.bak
 *.tmp
 .task/
+wails-updater.key
 build/appicon.icon/
 build/android/
 build/ios/
