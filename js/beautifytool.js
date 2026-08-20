@@ -197,7 +197,7 @@ class BeautifyTool {
                     BeautifyTool._inputEditor = monaco.editor.create(inputHost, {
                         value: '',
                         language: 'javascript',
-                        theme: document.body.classList.contains('tauri-app') ? 'vs-dark' : 'vs-dark',
+                        theme: document.body.classList.contains('wails-app') ? 'vs-dark' : 'vs-dark',
                         automaticLayout: true,
                         fontSize: 13,
                         minimap: { enabled: false },
@@ -207,7 +207,7 @@ class BeautifyTool {
                     BeautifyTool._outputEditor = monaco.editor.create(outputHost, {
                         value: '',
                         language: 'javascript',
-                        theme: document.body.classList.contains('tauri-app') ? 'vs-dark' : 'vs-dark',
+                        theme: document.body.classList.contains('wails-app') ? 'vs-dark' : 'vs-dark',
                         automaticLayout: true,
                         fontSize: 13,
                         minimap: { enabled: false },

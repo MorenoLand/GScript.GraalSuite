@@ -725,7 +725,7 @@ class SetshapeEditor {
 
     async _importImagePath(fp) {
         if (!fp || !/\.(png|gif|mng|webp|jpg|jpeg|bmp)$/i.test(fp)) return;
-        const bytes = await window.__TAURI__?.fs?.readFile(fp).catch(() => null);
+        const bytes = await window.__GSUITE__?.fs?.readFile(fp).catch(() => null);
         if (!bytes) return;
         const ext = (fp.split('.').pop() || '').toLowerCase();
         const mimeMap = {

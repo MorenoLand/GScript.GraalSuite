@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const dist = path.join(root, 'dist');
+const dist = path.join(root, 'frontend', 'dist');
 
 function rm(p) { if (fs.existsSync(p)) fs.rmSync(p, { recursive: true }); }
 
@@ -38,6 +38,8 @@ rm(dist);
 
 ['index.html', 'favicon.ico', 'example-theme.css', 'changelog.json'].forEach(f => cp(f));
 ['ganis', 'icons', 'images', 'sounds', 'vendor', 'js', 'css', 'levels', 'objects'].forEach(d => cp(d));
+cp('runtime.js', 'wails/runtime.js');
+cp('frontend/bindings', 'bindings');
 cpFiltered('fonts', 'fonts', f => /MesloLGS/i.test(f));
 cpFiltered('node_modules/monaco-editor/min/vs', 'monaco-editor/min/vs', f => /nls\.messages\..*\.js$/i.test(f));
 

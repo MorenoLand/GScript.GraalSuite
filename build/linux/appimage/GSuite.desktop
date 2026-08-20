@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=GSuite
+Exec=GSuite
+Icon=GSuite
+Categories=Development;
+Terminal=false
+Keywords=wails
+Version=1.0
+StartupNotify=false
+MimeType=application/x-graal-level;application/x-graal-map;

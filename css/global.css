@@ -454,13 +454,13 @@ button.active { background:#4472C4 !important; color:#ffffff; border-color:#6fa8
 #switchBtn,#btnSetshape2,#btnGmapGen { background:#353535; border:1px solid #0a0a0a; border-top:1px solid #404040; border-left:1px solid #404040; color:#e0e0e0; padding:4px 10px; cursor:pointer; font-family:"chevyray",monospace; font-size:12px; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
 #switchBtn:hover,#btnSetshape2:hover,#btnGmapGen:hover { background:#353535; }
 #switchBtn:active,#btnSetshape2:active,#btnGmapGen:active { background:#1a1a1a !important; }
-body.tauri-app #switchBtn, body.tauri-app #btnSetshape2, body.tauri-app #btnGmapGen, body.tauri-app #btnAbout { display:none !important; }
-#tbSwitchBtn,#tbParticleEmuBtn,#tbLevelGenBtn,#tbShapesBtn,#tbGmapBtn,#tbBeautifyBtn,#tbAboutBtn { -webkit-app-region:no-drag; app-region:no-drag; background:none; border:none; border-right:1px solid #2a2a2a; color:#9a9a9e; cursor:pointer; display:flex; align-items:center; gap:5px; padding:0 12px; height:32px; font-family:"chevyray",monospace; font-size:12px; transition:background 0.1s,color 0.1s; }
+body.wails-app #switchBtn, body.wails-app #btnSetshape2, body.wails-app #btnGmapGen, body.wails-app #btnAbout { display:none !important; }
+#tbSwitchBtn,#tbParticleEmuBtn,#tbLevelGenBtn,#tbShapesBtn,#tbGmapBtn,#tbBeautifyBtn,#tbAboutBtn { --wails-draggable:no-drag; -webkit-app-region:no-drag; app-region:no-drag; background:none; border:none; border-right:1px solid #2a2a2a; color:#9a9a9e; cursor:pointer; display:flex; align-items:center; gap:5px; padding:0 12px; height:32px; font-family:"chevyray",monospace; font-size:12px; transition:background 0.1s,color 0.1s; }
 #tbSwitchBtn svg,#tbLevelGenBtn svg,#tbShapesBtn svg,#tbGmapBtn svg,#tbBeautifyBtn svg,#tbAboutBtn svg { width:16px; height:16px; }
 #tbSwitchBtn:hover,#tbParticleEmuBtn:hover,#tbLevelGenBtn:hover,#tbShapesBtn:hover,#tbGmapBtn:hover,#tbBeautifyBtn:hover,#tbAboutBtn:hover { background:#3a3a3e; color:#e0e0e0; }
-#tauriBar { display:none; height:32px; min-height:32px; background:#1e1e1f; border-bottom:1px solid #111; user-select:none; -webkit-user-select:none; flex-shrink:0; position:relative; align-items:stretch; }
+#wailsBar { --wails-draggable:drag; display:none; height:32px; min-height:32px; background:#1e1e1f; border-bottom:1px solid #111; user-select:none; -webkit-user-select:none; flex-shrink:0; position:relative; align-items:stretch; }
 body { display:flex; flex-direction:column; }
-body.tauri-app #tauriBar { display:flex; }
+body.wails-app #wailsBar { display:flex; }
 #editorContainer { flex:1; height:0; min-height:0; }
 .main-container { height:100%; }
 .tb-leading, .tb-trailing { display:flex; align-items:center; flex:1; }
@@ -468,8 +468,8 @@ body.tauri-app #tauriBar { display:flex; }
 .tb-title { display:flex; align-items:center; gap:7px; padding:0 12px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none; white-space:nowrap; }
 .tb-title img { width:22px; height:22px; image-rendering:pixelated; }
 .tb-title span { font-family:"chevyray",monospace; font-size:24px; font-weight:700; color:#c8c8cc; letter-spacing:0.2px; line-height:1; transform:translateY(3px); }
-[data-tauri-drag-region] { -webkit-app-region:drag; app-region:drag; cursor:default; height:100%; }
-.tb-winbtn { -webkit-app-region:no-drag; app-region:no-drag; background:none; border:none; color:#9a9a9e; cursor:pointer; display:flex; align-items:center; justify-content:center; width:46px; height:32px; padding:0; transition:background 0.1s; }
+[data-wails-drag-region] { --wails-draggable:drag; -webkit-app-region:drag; app-region:drag; cursor:default; height:100%; }
+.tb-winbtn { --wails-draggable:no-drag; -webkit-app-region:no-drag; app-region:no-drag; background:none; border:none; color:#9a9a9e; cursor:pointer; display:flex; align-items:center; justify-content:center; width:46px; height:32px; padding:0; transition:background 0.1s; }
 .tb-winbtn svg { width:12px; height:12px; }
 .tb-winbtn:hover { background:#3a3a3e; color:#e0e0e0; }
 .tb-winbtn.tb-close:hover { background:#c42b1c; color:#fff; }

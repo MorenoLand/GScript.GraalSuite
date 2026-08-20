@@ -1,57 +1,48 @@
-name: Compile GSuite
+name: CI
 
 on:
   push:
-    branches: [master]
+    branches:
+      - '**'
+  pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: compile-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  compile:
-    name: Compile ${{ matrix.target }}
+  build:
+    name: Build ${{ matrix.artifact }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         include:
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact-name: gsuite-windows-x64
-            artifact-path: |
-              src-tauri/target/x86_64-pc-windows-msvc/release/*.exe
-              src-tauri/target/x86_64-pc-windows-msvc/release/bundle/**
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            artifact-name: gsuite-macos-arm64
-            artifact-path: src-tauri/target/aarch64-apple-darwin/release/bundle/**
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            artifact-name: gsuite-macos-x64
-            artifact-path: src-tauri/target/x86_64-apple-darwin/release/bundle/**
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            artifact-name: gsuite-linux-x64
-            artifact-path: |
-              src-tauri/target/x86_64-unknown-linux-gnu/release/GSuite
-              src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/**
+            goos: windows
+            goarch: amd64
+            artifact: gsuite-windows-x64
+          - os: macos-15-intel
+            goos: darwin
+            goarch: amd64
+            artifact: gsuite-macos-x64
+          - os: ubuntu-24.04
+            goos: linux
+            goarch: amd64
+            artifact: gsuite-linux-x64
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.ref_name }}
+      - uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -59,55 +50,42 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install Node deps
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install Wails CLI
+        shell: pwsh
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.10
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path (go env GOPATH) 'bin')
+
+      - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
-
-      - name: Linux system deps
-        if: matrix.os == 'ubuntu-22.04'
+      - name: Install Linux WebView dependencies
+        if: matrix.goos == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 
-      - name: Resolve release version
-        id: release
+      - name: Install UPX
+        if: matrix.goos == 'windows'
+        run: choco install upx -y --no-progress
+
+      - name: Build
         shell: bash
-        run: |
-          version="$(node -p "require('./package.json').version")"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+        run: wails3 build GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
 
-      - name: Build and publish Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          tagName: v${{ steps.release.outputs.version }}
-          releaseName: GSuite v${{ steps.release.outputs.version }}
-          releaseBody: See changelog for details.
-          releaseDraft: false
-          prerelease: false
-          includeUpdaterJson: true
-          tauriScript: pnpm exec tauri
-          args: --target ${{ matrix.target }}
-
-      - name: Upload portable exe (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        run: |
-          exe="$(find "src-tauri/target/${{ matrix.target }}/release" -maxdepth 1 -type f -name '*.exe' ! -name '*setup*' | head -n 1)"
-          if [ -n "$exe" ]; then
-            gh release upload "v${{ steps.release.outputs.version }}" "$exe" --clobber
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: ci-${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            bin/GSuite.exe
+            bin/GSuite
+            bin/GSuite.app

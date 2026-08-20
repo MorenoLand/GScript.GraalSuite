@@ -1,5 +1,14 @@
 [
   {
+    "version": "0.1.84",
+    "date": "2026-08-20",
+    "tag": "GSuite",
+    "changes": [
+      "Migrated the desktop runtime from Tauri/Rust to Wails3/Go while preserving native file dialogs, file associations, updater, single-instance file opening, file-drop handling, workspace scanning, and FILENAMECACHE.txt restoration",
+      "Reduced the Windows executable with stripped linker output, trimpath, and UPX compression without removing project assets"
+    ]
+  },
+  {
     "version": "0.1.83",
     "date": "2026-07-20",
     "tag": "GSuite",

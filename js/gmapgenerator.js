@@ -123,12 +123,12 @@ class GmapGenerator {
             const gmapName = `${prefix}.gmap`;
             files.set(gmapName, gmapContent);
 
-            if (typeof _isTauri !== 'undefined' && _isTauri) {
-                const dir = await _tauri.dialog.open({ directory: true, multiple: false, title: 'Save Gmap Files To' }).catch(() => null);
+            if (typeof _isWails !== 'undefined' && _isWails) {
+                const dir = await _wails.dialog.open({ directory: true, multiple: false, title: 'Save Gmap Files To' }).catch(() => null);
                 if (!dir) { status.textContent = ''; return; }
                 let saved = 0;
                 for (const [name, content] of files) {
-                    await _tauri.fs.writeTextFile(`${dir}/${name}`, content).catch(() => {});
+                    await _wails.fs.writeTextFile(`${dir}/${name}`, content).catch(() => {});
                     saved++;
                 }
                 status.style.color = '#6c6'; status.textContent = `Saved ${saved} files to folder.`;

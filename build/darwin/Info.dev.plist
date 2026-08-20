@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CFBundleDocumentTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeExtensions</key>
+				<array>
+					<string>nw</string>
+				</array>
+				<key>CFBundleTypeIconFile</key>
+				<string>icon</string>
+				<key>CFBundleTypeMimeType</key>
+				<string>application/x-graal-level</string>
+				<key>CFBundleTypeName</key>
+				<string>Graal Level</string>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+			</dict>
+			<dict>
+				<key>CFBundleTypeExtensions</key>
+				<array>
+					<string>gmap</string>
+				</array>
+				<key>CFBundleTypeIconFile</key>
+				<string>icon</string>
+				<key>CFBundleTypeMimeType</key>
+				<string>application/x-graal-map</string>
+				<key>CFBundleTypeName</key>
+				<string>Graal Map</string>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+			</dict>
+		</array>
+		<key>CFBundleExecutable</key>
+		<string>GSuite</string>
+		<key>CFBundleGetInfoString</key>
+		<string>GSuite desktop editor</string>
+		<key>CFBundleIconFile</key>
+		<string>icons</string>
+		<key>CFBundleIdentifier</key>
+		<string>com.morenoland.gsuite</string>
+		<key>CFBundleName</key>
+		<string>GSuite</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>0.1.84</string>
+		<key>CFBundleVersion</key>
+		<string>0.1.84</string>
+		<key>LSMinimumSystemVersion</key>
+		<string>12.0.0</string>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+		</dict>
+		<key>NSHighResolutionCapable</key>
+		<string>true</string>
+		<key>NSHumanReadableCopyright</key>
+		<string>Copyright (c) MorenoLand</string>
+	</dict>
+</plist>

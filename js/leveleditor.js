@@ -1,6 +1,6 @@
 
-var _isTauri = window.__TAURI__ != null;
-var _tauri = _isTauri ? window.__TAURI__ : null;
+var _isWails = window.__GSUITE__ != null;
+var _wails = _isWails ? window.__GSUITE__ : null;
 
 const _DEFAULT_KB = {
     undo:'ctrl+z', redo:'ctrl+y', save:'ctrl+s', copy:'ctrl+c', cut:'ctrl+x', paste:'ctrl+v',
@@ -680,7 +680,7 @@ class LevelEditor {
         this._stampTilesLifted = false;
         this.workingDirectory = '';
         this.fileCache = { images: new Map(), ganis: new Map(), ganiTexts: new Map(), sounds: new Map(), levels: new Map() };
-        this._tauriPathIndex = new Map();
+        this._wailsPathIndex = new Map();
         this.isDraggingFromTileset = false;
         this.draggedTileIndex = -1;
         this.dragMouseX = 0;
@@ -735,7 +735,7 @@ class LevelEditor {
         this.setTool(this.currentTool);
         this.loadDefaultTileset();
         this.initColorScheme();
-        if (_isTauri) this.restoreWorkspaceFromCache().catch(() => {});
+        if (_isWails) this.restoreWorkspaceFromCache().catch(() => {});
         this._applyUISettings(this._getSettings());
         this.loadDefaultObjects().catch(() => {});
     }
@@ -1234,9 +1234,9 @@ class LevelEditor {
         const btnAbout = this.$('btnAbout');
         if (btnAbout) {
             btnAbout.addEventListener('click', () => window.openInfoDialog?.('about'));
-            if (_isTauri) btnAbout.style.display = 'none';
+            if (_isWails) btnAbout.style.display = 'none';
         }
-        if (_isTauri) {
+        if (_isWails) {
             document.querySelectorAll('.btn-check-update').forEach(btn => {
                 btn.style.display = '';
                 btn.addEventListener('click', async () => {
@@ -1245,8 +1245,8 @@ class LevelEditor {
                     this._showUpdateCheckDialog(btn);
                 });
             });
-            if (_isTauri) {
-                _tauri.event.listen('update-available', (event) => {
+            if (_isWails) {
+                _wails.event.listen('update-available', (event) => {
                     if (this.$('_updateDlg')) return;
                     this._showUpdatePrompt(event.payload);
                 }).catch(() => {});
@@ -1274,7 +1274,7 @@ class LevelEditor {
         box.innerHTML = `<div style="padding:8px 12px;font-size:13px;display:flex;align-items:center;justify-content:space-between;user-select:none;background:#353535;flex-shrink:0;" class="_udlg-title"><span>Check for Updates</span><button id="_updateDlgClose" style="background:none;border:none;cursor:pointer;font-size:16px;line-height:1;">×</button></div><div id="_updateDlgBody" style="padding:16px;font-size:13px;font-family:chevyray,monospace;">Checking for updates...</div>`;
         document.body.appendChild(box);
         box.querySelector('#_updateDlgClose').addEventListener('click', () => { box.remove(); btn.disabled = false; });
-        _tauri.core.invoke('check_for_update').then(result => {
+        _wails.core.invoke('check_for_update').then(result => {
             if (result) this._showUpdatePrompt(result, btn);
             else { this.$('_updateDlgBody').textContent = 'You\'re up to date!'; btn.disabled = false; }
         }).catch(e => { this.$('_updateDlgBody').innerHTML = `<span style="color:#ff6b6b;">Update check failed:\n${e}</span>`; btn.disabled = false; });
@@ -1304,7 +1304,7 @@ class LevelEditor {
         box.querySelector('#_updateLater').addEventListener('click', () => close(this.$('_updateSkipThis').checked));
         box.querySelector('#_updateNow').addEventListener('click', () => {
             this.$('_updateDlgBody') || (box.querySelector('div:nth-child(2)').innerHTML = '<div style="text-align:center;padding:8px;">Downloading and installing...</div>');
-            _tauri.core.invoke('do_update').catch(e => { box.querySelector('div:nth-child(2)').innerHTML = `<span style="color:#ff6b6b;">Update failed:\n${e}</span>`; });
+            _wails.core.invoke('do_update').catch(e => { box.querySelector('div:nth-child(2)').innerHTML = `<span style="color:#ff6b6b;">Update failed:\n${e}</span>`; });
         });
     }
 
@@ -4025,7 +4025,7 @@ class LevelEditor {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this._setEditorVisible(false);
             document.title = 'GSuite';
-            if (window.__TAURI__) { window.__TAURI__.window.getCurrentWindow().setTitle('GSuite'); }
+            if (window.__GSUITE__) { window.__GSUITE__.window.getCurrentWindow().setTitle('GSuite'); }
             const t = document.getElementById('tbTitle'); if (t) t.textContent = 'GSuite';
             this.saveSession();
             return;
@@ -4054,14 +4054,14 @@ class LevelEditor {
             if (ns && idx >= 0 && this.levels[idx]) ns.textContent = this.levels[idx].name;
         });
         const entry = this.levels[this.currentLevelIndex];
-        const _isTauri = !!window.__TAURI__;
+        const _isWails = !!window.__GSUITE__;
         if (entry) {
             document.title = entry.name;
-            if (_isTauri) { window.__TAURI__.window.getCurrentWindow().setTitle(entry.name); }
+            if (_isWails) { window.__GSUITE__.window.getCurrentWindow().setTitle(entry.name); }
             const t = document.getElementById('tbTitle'); if (t) t.textContent = entry.name;
         } else {
             document.title = 'GSuite';
-            if (_isTauri) { window.__TAURI__.window.getCurrentWindow().setTitle('GSuite'); }
+            if (_isWails) { window.__GSUITE__.window.getCurrentWindow().setTitle('GSuite'); }
             const t = document.getElementById('tbTitle'); if (t) t.textContent = 'GSuite';
         }
         const isZelda = this._currentLevelIsZelda();
@@ -4069,7 +4069,7 @@ class LevelEditor {
     }
 
     async loadImageFromPath(filePath, name) {
-        const data = await _tauri.fs.readFile(filePath);
+        const data = await _wails.fs.readFile(filePath);
         const isMng = name.toLowerCase().endsWith('.mng');
         if (isMng) {
             try {
@@ -4092,8 +4092,8 @@ class LevelEditor {
         const dirName = dirPath.split(/[\\/]/).pop();
         this.workingDirectory = dirName;
         localStorage.setItem('levelEditorLastWorkingDir', dirName);
-        window._tauriLastDir = dirPath;
-        this._tauriPathIndex = new Map();
+        window._wailsLastDir = dirPath;
+        this._wailsPathIndex = new Map();
         this._fcLower = null;
         this._objImgCache = new Map();
         this._ganiCache = new Map();
@@ -4101,14 +4101,14 @@ class LevelEditor {
         this.fileCache = { images: new Map(), ganis: new Map(), ganiTexts: new Map(), sounds: new Map(), levels: new Map() };
         if (window._workspaceScanUnlisten) { window._workspaceScanUnlisten(); window._workspaceScanUnlisten = null; }
         const _yield = () => new Promise(r => setTimeout(r, 0));
-        window._workspaceScanUnlisten = await _tauri.event.listen('workspace_chunk', async (event) => {
+        window._workspaceScanUnlisten = await _wails.event.listen('workspace_chunk', async (event) => {
             const chunk = event.payload;
             const ganiEntries = chunk.gani_files || [];
             for (let i = 0; i < ganiEntries.length; i += 12) {
                 await Promise.all(ganiEntries.slice(i, i + 12).map(async ([name, path]) => {
-                    this._tauriPathIndex.set(name, path);
+                    this._wailsPathIndex.set(name, path);
                     try {
-                        const text = await _tauri.fs.readTextFile(path);
+                        const text = await _wails.fs.readTextFile(path);
                         if (!/[\x00-\x08\x0e-\x1f]/.test(text.substring(0, 256))) {
                             this.fileCache.ganiTexts.set(name, text);
                             this.fileCache.ganis.set(name, URL.createObjectURL(new Blob([text])));
@@ -4119,10 +4119,10 @@ class LevelEditor {
             }
             for (const path of (chunk.sound_files || [])) {
                 const sname = path.split(/[\\/]/).pop();
-                this._tauriPathIndex.set(sname, path);
+                this._wailsPathIndex.set(sname, path);
                 this.fileCache.sounds.set(sname, path);
             }
-            for (const [name, path] of (chunk.level_files || [])) this._tauriPathIndex.set(name, path);
+            for (const [name, path] of (chunk.level_files || [])) this._wailsPathIndex.set(name, path);
             if (chunk.done) {
                 if (window._workspaceScanUnlisten) { window._workspaceScanUnlisten(); window._workspaceScanUnlisten = null; }
                 this._workspaceCount = (this._workspaceCount || 0) + 1;
@@ -4134,23 +4134,23 @@ class LevelEditor {
                 this.refreshNPCList();
             }
         });
-        await _tauri.core.invoke('scan_workspace', { dir: dirPath });
+        await _wails.core.invoke('scan_workspace', { dir: dirPath });
     }
 
     async restoreWorkspaceFromCache() {
-        const cached = await _tauri.core.invoke('load_workspace_cache').catch(() => null);
+        const cached = await _wails.core.invoke('load_workspace_cache').catch(() => null);
         if (!cached) return false;
         const dirPath = cached.dir;
         const dirName = dirPath.split(/[\\/]/).pop();
         this.workingDirectory = dirName;
         localStorage.setItem('levelEditorLastWorkingDir', dirName);
-        window._tauriLastDir = dirPath;
-        this._tauriPathIndex = new Map();
+        window._wailsLastDir = dirPath;
+        this._wailsPathIndex = new Map();
         this._fcLower = null;
         const soundExts = new Set(['wav','mp3','ogg','mid','midi']);
         const ganiPaths = [];
         cached.entries.forEach(([name, path]) => {
-            this._tauriPathIndex.set(name, path);
+            this._wailsPathIndex.set(name, path);
             const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
             if (soundExts.has(ext)) this.fileCache.sounds.set(name, path);
             if (name.endsWith('.gani')) ganiPaths.push([name, path]);
@@ -4158,7 +4158,7 @@ class LevelEditor {
         const _yield = () => new Promise(r => setTimeout(r, 0));
         for (let i = 0; i < ganiPaths.length; i += 12) {
             await Promise.all(ganiPaths.slice(i, i + 12).map(([n, p]) =>
-                _tauri.fs.readTextFile(p).then(text => {
+                _wails.fs.readTextFile(p).then(text => {
                     if (!/[\x00-\x08\x0e-\x1f]/.test(text.substring(0, 256))) {
                         this.fileCache.ganiTexts.set(n, text);
                         this.fileCache.ganis.set(n, URL.createObjectURL(new Blob([text])));
@@ -4221,8 +4221,8 @@ class LevelEditor {
                 await new Promise(r => setTimeout(r, 0));
             }
         };
-        if (_isTauri) {
-            const selected = await _tauri.dialog.open({ directory: true, multiple: false, title: 'Select Working Directory' });
+        if (_isWails) {
+            const selected = await _wails.dialog.open({ directory: true, multiple: false, title: 'Select Working Directory' });
             if (!selected) return;
             await this.loadWorkspaceFromDisk(selected);
             return;
@@ -4559,14 +4559,14 @@ class LevelEditor {
         tag.textContent = `
             body, button, input, select, textarea, label, span, .tab, .custom-dropdown-button, .custom-dropdown-item,
             #editorContainer button, #editorContainer .left-tab, #editorContainer select, #editorContainer label,
-            #editorContainer .combo-label, #editorContainer .panel-section-title, #tauriBar .tb-title span,
-            #tauriBar button, .dialog-titlebar span {
+            #editorContainer .combo-label, #editorContainer .panel-section-title, #wailsBar .tb-title span,
+            #wailsBar button, .dialog-titlebar span {
                 font-family:${ff} !important;
                 font-size:${sz} !important;
                 font-weight:${fw} !important;
                 font-style:${fi} !important;
             }
-            #tauriBar .tb-title span {
+            #wailsBar .tb-title span {
                 line-height:1 !important;
             }
         `;
@@ -4659,7 +4659,7 @@ class LevelEditor {
                 <div style="border-top:1px solid #1a1a1a;padding-top:10px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">Play Mode</div>
                 <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="_stPlayFlowers" ${s.playFlowers ? 'checked' : ''}><span>Animate Flowers</span></label>
                 <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="_stObjectPickup" ${s.objectPickup ? 'checked' : ''}><span>Enable Object Pickup</span></label>
-                ${_isTauri ? `<div style="border-top:1px solid #1a1a1a;padding-top:10px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">System</div><div style="display:flex;align-items:center;gap:10px;"><button id="_stRegAssoc" style="padding:4px 14px;cursor:pointer;background:#353535;color:#ddd;border:1px solid #0a0a0a;border-top:1px solid #555;border-left:1px solid #555;font-family:chevyray,monospace;font-size:12px;">Register File Associations</button><span id="_stRegAssocStatus" style="font-size:11px;color:#6c6;"></span></div>` : ''}
+                ${_isWails ? `<div style="border-top:1px solid #1a1a1a;padding-top:10px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">System</div><div style="display:flex;align-items:center;gap:10px;"><button id="_stRegAssoc" style="padding:4px 14px;cursor:pointer;background:#353535;color:#ddd;border:1px solid #0a0a0a;border-top:1px solid #555;border-left:1px solid #555;font-family:chevyray,monospace;font-size:12px;">Register File Associations</button><span id="_stRegAssocStatus" style="font-size:11px;color:#6c6;"></span></div>` : ''}
             </div>
             <div id="_stKeybinds" style="display:none;padding:12px 16px;overflow-y:auto;font-family:chevyray,monospace;">
                 <div style="color:#666;font-size:10px;margin-bottom:8px;">click to rebind &nbsp;·&nbsp; right-click to reset</div>
@@ -4732,7 +4732,7 @@ class LevelEditor {
             });
             this.requestRender();
         };
-        if (_isTauri) { const regBtn = box.querySelector('#_stRegAssoc'); if (regBtn) regBtn.onclick = async () => { regBtn.disabled = true; const st = box.querySelector('#_stRegAssocStatus'); st.style.color = '#aaa'; st.textContent = 'Registering...'; try { const msg = await _tauri.core.invoke('register_file_associations'); st.style.color = '#6c6'; st.textContent = msg; } catch(e) { st.style.color = '#f66'; st.textContent = String(e); } regBtn.disabled = false; }; }
+        if (_isWails) { const regBtn = box.querySelector('#_stRegAssoc'); if (regBtn) regBtn.onclick = async () => { regBtn.disabled = true; const st = box.querySelector('#_stRegAssocStatus'); st.style.color = '#aaa'; st.textContent = 'Registering...'; try { const msg = await _wails.core.invoke('register_file_associations'); st.style.color = '#6c6'; st.textContent = msg; } catch(e) { st.style.color = '#f66'; st.textContent = String(e); } regBtn.disabled = false; }; }
         box.querySelectorAll('._stTab').forEach(btn => btn.addEventListener('click', () => {
             box.querySelectorAll('._stTab').forEach((b,_i,arr) => { const a = b===btn; b.style.cssText = _btnStyle(a); });
             box.querySelector('#_stGeneral').style.display = btn.dataset.tab==='general' ? '' : 'none';
@@ -5775,7 +5775,7 @@ class LevelEditor {
     }
 
     async _refillGmapEntries() {
-        if (!this._tauriPathIndex?.size) return;
+        if (!this._wailsPathIndex?.size) return;
         let anyFilled = false;
         for (const entry of this.levels) {
             if (!entry.gmapGrid) continue;
@@ -5785,12 +5785,12 @@ class LevelEditor {
                 if (!name || entry.gmapLevels?.[name]) continue;
                 const key = name.toLowerCase().endsWith('.nw') ? name.toLowerCase() : name.toLowerCase() + '.nw';
                 const inFileCache = this.fileCache.levels.has(key);
-                const inPathIndex = this._tauriPathIndex.has(key);
+                const inPathIndex = this._wailsPathIndex.has(key);
                 if (!inFileCache && inPathIndex) missing.push([name, key]);
             }
             if (!missing.length) continue;
             await Promise.all(missing.map(([, key]) =>
-                _tauri.fs.readTextFile(this._tauriPathIndex.get(key)).then(t => this.fileCache.levels.set(key, t)).catch(() => {})
+                _wails.fs.readTextFile(this._wailsPathIndex.get(key)).then(t => this.fileCache.levels.set(key, t)).catch(() => {})
             ));
             for (let cy = 0; cy < grid.length; cy++) {
                 for (let cx = 0; cx < (grid[cy]?.length || 0); cx++) {
@@ -5848,7 +5848,7 @@ class LevelEditor {
     }
 
     async openGmapText(text, filename, levelsOverride, filePath = null) {
-        if (!levelsOverride && _isTauri) {
+        if (!levelsOverride && _isWails) {
             const { grid } = this.parseGmap(text);
             const slash = String.fromCharCode(92);
             const cut = filePath ? Math.max(filePath.lastIndexOf(slash), filePath.lastIndexOf('/')) : -1;
@@ -5860,11 +5860,11 @@ class LevelEditor {
                 const key = rawName.toLowerCase().endsWith('.nw') ? rawName.toLowerCase() : rawName.toLowerCase() + '.nw';
                 const localName = rawName.endsWith('.nw') ? rawName : rawName + '.nw';
                 const alreadyLoaded = this.fileCache.levels.has(key) || this.fileCache.levels.has(rawName.toLowerCase()) || [...this.fileCache.levels.keys()].some(k => k.toLowerCase().endsWith('\\' + key) || k.toLowerCase().endsWith('/' + key));
-                const path = alreadyLoaded ? null : (dir ? dir + sep + localName : null) || this._tauriPathIndex?.get(key) || this._tauriPathIndex?.get(rawName.toLowerCase()) || [...(this._tauriPathIndex?.entries?.() || [])].find(([k]) => k.toLowerCase().endsWith('\\' + key) || k.toLowerCase().endsWith('/' + key))?.[1];
+                const path = alreadyLoaded ? null : (dir ? dir + sep + localName : null) || this._wailsPathIndex?.get(key) || this._wailsPathIndex?.get(rawName.toLowerCase()) || [...(this._wailsPathIndex?.entries?.() || [])].find(([k]) => k.toLowerCase().endsWith('\\' + key) || k.toLowerCase().endsWith('/' + key))?.[1];
                 if (!alreadyLoaded && path) toLoad.push([key, path]);
             }
             await Promise.all(toLoad.map(([name, path]) =>
-                _tauri.fs.readTextFile(path).then(t => { this.fileCache.levels.set(name, t); }).catch(e => console.warn('[openGmapText load err]', name, e))
+                _wails.fs.readTextFile(path).then(t => { this.fileCache.levels.set(name, t); }).catch(e => console.warn('[openGmapText load err]', name, e))
             ));
         }
         const entry = this._buildGmapEntry(text, filename, levelsOverride);
@@ -5916,8 +5916,8 @@ class LevelEditor {
             const fallback = ['cave1.zelda','house1.graal','house1.zelda','onlinestartlocal.nw','start1.graal'];
             let files = fallback;
             try {
-                if (_isTauri) {
-                    const entries = await _tauri.fs.readDir('levels').catch(() => null);
+                if (_isWails) {
+                    const entries = await _wails.fs.readDir('levels').catch(() => null);
                     if (entries) files = entries.map(e => e.name).filter(n => n && /\.(nw|zelda|graal|gmap)$/i.test(n));
                 } else {
                     let r = await fetch(`levels/index.json?_=${Date.now()}`, { cache: 'no-store' }).catch(() => null);
@@ -5962,14 +5962,14 @@ class LevelEditor {
     }
 
     async openLevel() {
-        if (_isTauri) {
-            const selected = await _tauri.dialog.open({ multiple: true, filters: [{ name: 'Graal Files', extensions: ['nw','gmap','graal','zelda','gani'] }] }).catch(() => null);
+        if (_isWails) {
+            const selected = await _wails.dialog.open({ multiple: true, filters: [{ name: 'Graal Files', extensions: ['nw','gmap','graal','zelda','gani'] }] }).catch(() => null);
             const paths = Array.isArray(selected) ? selected : selected ? [selected] : [];
             for (const path of paths) {
                 const name = path.split(String.fromCharCode(92)).pop().split('/').pop();
                 const ext = name.split('.').pop().toLowerCase();
-                if (ext === 'graal' || ext === 'zelda') { const data = await _tauri.fs.readFile(path); this.openFromBuffer(data.buffer || data, name, path); }
-                else this.openFromText(await _tauri.fs.readTextFile(path), name, path);
+                if (ext === 'graal' || ext === 'zelda') { const data = await _wails.fs.readFile(path); this.openFromBuffer(data.buffer || data, name, path); }
+                else this.openFromText(await _wails.fs.readTextFile(path), name, path);
             }
             return;
         }
@@ -6013,10 +6013,10 @@ class LevelEditor {
     }
 
     async _downloadFile(filename, content, mime = 'text/plain') {
-        if (_isTauri) {
-            const path = await _tauri.dialog.save({ defaultPath: filename, title: 'Save File' }).catch(() => null);
+        if (_isWails) {
+            const path = await _wails.dialog.save({ defaultPath: filename, title: 'Save File' }).catch(() => null);
             if (!path) return null;
-            await this._writeTauriFile(path, content);
+            await this._writeWailsFile(path, content);
             return path;
         }
         const url = URL.createObjectURL(new Blob([content], { type: mime }));
@@ -6026,11 +6026,11 @@ class LevelEditor {
         return null;
     }
 
-    async _writeTauriFile(path, content) {
-        if (content instanceof Blob) { const buf = await content.arrayBuffer(); await _tauri.fs.writeFile(path, new Uint8Array(buf)).catch(() => {}); }
-        else if (content instanceof ArrayBuffer) { await _tauri.fs.writeFile(path, new Uint8Array(content)).catch(() => {}); }
-        else if (ArrayBuffer.isView(content)) { await _tauri.fs.writeFile(path, content instanceof Uint8Array ? content : new Uint8Array(content.buffer, content.byteOffset, content.byteLength)).catch(() => {}); }
-        else { await _tauri.fs.writeTextFile(path, content).catch(() => {}); }
+    async _writeWailsFile(path, content) {
+        if (content instanceof Blob) { const buf = await content.arrayBuffer(); await _wails.fs.writeFile(path, new Uint8Array(buf)).catch(() => {}); }
+        else if (content instanceof ArrayBuffer) { await _wails.fs.writeFile(path, new Uint8Array(content)).catch(() => {}); }
+        else if (ArrayBuffer.isView(content)) { await _wails.fs.writeFile(path, content instanceof Uint8Array ? content : new Uint8Array(content.buffer, content.byteOffset, content.byteLength)).catch(() => {}); }
+        else { await _wails.fs.writeTextFile(path, content).catch(() => {}); }
     }
 
     async saveLevel() {
@@ -6039,8 +6039,8 @@ class LevelEditor {
         const name = entry?.name || 'level';
         const ext = name.split('.').pop().toLowerCase();
         const isBin = ext === 'graal' || ext === 'zelda';
-        if (_isTauri && entry?.filePath) {
-            await this._writeTauriFile(entry.filePath, isBin ? this.level.saveToGraal(ext === 'zelda') : this.level.saveToNW());
+        if (_isWails && entry?.filePath) {
+            await this._writeWailsFile(entry.filePath, isBin ? this.level.saveToGraal(ext === 'zelda') : this.level.saveToNW());
             if (entry) { entry.modified = false; this.updateLevelTabs(); }
             this.saveSessionDebounced();
             return;
@@ -6057,13 +6057,13 @@ class LevelEditor {
         const entry = this.levels[this.currentLevelIndex];
         if (entry?.gmapGrid) { this._saveGmap(entry); return; }
         const current = entry?.name || '';
-        if (_isTauri) {
+        if (_isWails) {
             const ext = current.split('.').pop().toLowerCase();
             const isBin = ext === 'graal' || ext === 'zelda';
             const suggested = current || 'level.nw';
-            const path = await _tauri.dialog.save({ defaultPath: suggested, title: 'Save As' }).catch(() => null);
+            const path = await _wails.dialog.save({ defaultPath: suggested, title: 'Save As' }).catch(() => null);
             if (!path) return;
-            await this._writeTauriFile(path, isBin ? this.level.saveToGraal(ext === 'zelda') : this.level.saveToNW());
+            await this._writeWailsFile(path, isBin ? this.level.saveToGraal(ext === 'zelda') : this.level.saveToNW());
             if (entry) { entry.filePath = path; entry.name = path.replace(/\\/g,'/').split('/').pop(); entry.modified = false; this.updateLevelTabs(); }
             this.saveSessionDebounced();
             return;
@@ -6091,7 +6091,7 @@ class LevelEditor {
         if (!all.length) return;
         const gmapName = entry.name.endsWith('.gmap') ? entry.name : entry.name + '.gmap';
 
-        if (_isTauri && entry.fullPath) {
+        if (_isWails && entry.fullPath) {
             const slash = String.fromCharCode(92);
             const cut = Math.max(entry.fullPath.lastIndexOf(slash), entry.fullPath.lastIndexOf('/'));
             const dir = cut >= 0 ? entry.fullPath.slice(0, cut) : '';
@@ -6100,7 +6100,7 @@ class LevelEditor {
                 const clean = name.replace(/^"|"$/g, '');
                 const file = /\.(nw|graal|zelda)$/i.test(clean) ? clean : clean + '.nw';
                 const key = file.toLowerCase();
-                return this._tauriPathIndex?.get(key) || this._tauriPathIndex?.get(clean.toLowerCase()) || (dir ? dir + sep + file : file);
+                return this._wailsPathIndex?.get(key) || this._wailsPathIndex?.get(clean.toLowerCase()) || (dir ? dir + sep + file : file);
             };
             const box = document.createElement('div');
             box.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#2b2b2b;border:1px solid #404040;padding:16px 20px;z-index:99999;min-width:280px;font-size:13px;color:#e0e0e0;'; box.classList.add('ed-dialog-box');
@@ -6117,8 +6117,8 @@ class LevelEditor {
             this.$('_gmCancel').onclick = close;
             const doSave = async (subset) => {
                 close();
-                await this._writeTauriFile(entry.fullPath, entry.gmapText);
-                for (const [name, text] of subset) await this._writeTauriFile(levelPath(name), text);
+                await this._writeWailsFile(entry.fullPath, entry.gmapText);
+                for (const [name, text] of subset) await this._writeWailsFile(levelPath(name), text);
                 entry.gmapLevels = serialized.gmapLevels;
                 entry.modified = false;
                 this.updateLevelTabs();
@@ -6661,11 +6661,11 @@ class LevelEditor {
         this._screenshotMode = true; this._ssOpts = o; this.drawObjects(); this._screenshotMode = false; this._ssOpts = null;
         this.ctx = savedCtx; this.canvas = savedCanvas; this.panX = savedPanX; this.panY = savedPanY; this.zoom = savedZoom;
         const filename = (this.levels[this.currentLevelIndex]?.name || 'level') + '.png';
-        if (_isTauri) {
+        if (_isWails) {
             tmpCanvas.toBlob(async blob => {
                 const buf = await blob.arrayBuffer();
-                const path = await _tauri.dialog.save({ defaultPath: filename, filters: [{ name: 'PNG', extensions: ['png'] }] });
-                if (path) await _tauri.fs.writeFile(path, new Uint8Array(buf));
+                const path = await _wails.dialog.save({ defaultPath: filename, filters: [{ name: 'PNG', extensions: ['png'] }] });
+                if (path) await _wails.fs.writeFile(path, new Uint8Array(buf));
             }, 'image/png');
         } else {
             const a = document.createElement('a');
@@ -6683,7 +6683,7 @@ class LevelEditor {
     refreshTileset() {
         const tilesetName = this.level?.tilesetName;
         if (!tilesetName) return;
-        const hasOnlyDataCache = !!this._tilesetDataCache?.[tilesetName] && !this.fileCache?.images?.has(tilesetName) && !_isTauri;
+        const hasOnlyDataCache = !!this._tilesetDataCache?.[tilesetName] && !this.fileCache?.images?.has(tilesetName) && !_isWails;
         if (!hasOnlyDataCache) {
             const cachedImageUrl = this.fileCache?.images?.get(tilesetName);
             if (cachedImageUrl?.startsWith('blob:')) {
@@ -6856,8 +6856,8 @@ class LevelEditor {
 
     loadTilesetImage(tilesetName, forceRefresh = false) {
         if (!tilesetName) return;
-        if (_isTauri && (forceRefresh || (!this._tilesetDataCache?.[tilesetName] && !this.fileCache?.images?.has(tilesetName)))) {
-            _tauri.core.invoke('resolve_path', { name: tilesetName }).then(fp => {
+        if (_isWails && (forceRefresh || (!this._tilesetDataCache?.[tilesetName] && !this.fileCache?.images?.has(tilesetName)))) {
+            _wails.core.invoke('resolve_path', { name: tilesetName }).then(fp => {
                 if (fp) this.loadImageFromPath(fp, tilesetName).then(() => this.loadTilesetImage(tilesetName)).catch(() => {});
             }).catch(() => {});
             if (forceRefresh) return;
@@ -7281,12 +7281,12 @@ class LevelEditor {
             const mngBlob = this.fileCache?.mngs?.get(name)
                 || this.fileCache?.mngs?.get(lowerName)
                 || [...(this.fileCache?.mngs?.entries?.() || [])].find(([k]) => k.toLowerCase() === lowerName)?.[1];
-            const tauriPath = this._tauriPathIndex?.get(lowerName)
-                || this._tauriPathIndex?.get(name)
-                || [...(this._tauriPathIndex?.entries?.() || [])].find(([k]) => k.toLowerCase() === lowerName)?.[1];
+            const wailsPath = this._wailsPathIndex?.get(lowerName)
+                || this._wailsPathIndex?.get(name)
+                || [...(this._wailsPathIndex?.entries?.() || [])].find(([k]) => k.toLowerCase() === lowerName)?.[1];
             const _mngLoad2 = buf => MNG.play(buf).then(c => { this._mngAnimCache.set(name, c); this.requestRender(); }).catch(() => {});
             if (mngBlob) { fetch(mngBlob).then(r => r.arrayBuffer()).then(_mngLoad2).catch(() => {}); }
-            else if (_isTauri && tauriPath) { _tauri.fs.readFile(tauriPath).then(d => _mngLoad2(d.buffer)).catch(() => {}); }
+            else if (_isWails && wailsPath) { _wails.fs.readFile(wailsPath).then(d => _mngLoad2(d.buffer)).catch(() => {}); }
             else { fetch(`images/${name}`).then(r => r.arrayBuffer()).then(_mngLoad2).catch(() => {}); }
             return placeholder;
         }
@@ -7303,8 +7303,8 @@ class LevelEditor {
             return placeholder;
         }
         if (this._ganiImgCache.has(name)) return this._ganiImgCache.get(name);
-        if (!cached && _isTauri && name) {
-            _tauri.core.invoke('resolve_path', { name }).then(fp => {
+        if (!cached && _isWails && name) {
+            _wails.core.invoke('resolve_path', { name }).then(fp => {
                 if (fp) this.loadImageFromPath(fp, name).then(() => { this._fcLower = null; this._ganiImgCache.delete(name); this.requestRender(); }).catch(() => {});
             }).catch(() => {});
         }
@@ -7431,15 +7431,15 @@ class LevelEditor {
         if (imgName) {
             if (!this._fcLower && this.fileCache?.images?.size) this._fcLower = new Map([...this.fileCache.images.keys()].map(k => [k.toLowerCase(), k]));
             const resolved = this.fileCache?.images?.has(imgName) ? imgName : (this._fcLower?.get(imgName.toLowerCase()) || null);
-            if (!resolved && _isTauri && imgName) {
+            if (!resolved && _isWails && imgName) {
                 const _lname = imgName.toLowerCase();
-                if (!this._tauriLoadingImgs) this._tauriLoadingImgs = new Set();
-                if (!this._tauriLoadingImgs.has(_lname)) {
-                    this._tauriLoadingImgs.add(_lname);
-                    _tauri.core.invoke('resolve_path', { name: _lname }).then(fp => {
-                        if (fp) this.loadImageFromPath(fp, _lname).then(() => { this._fcLower = null; if (this._objImgCache) this._objImgCache.delete(imgName); this._tauriLoadingImgs.delete(_lname); this.requestRender(); }).catch(() => { this._tauriLoadingImgs.delete(_lname); });
-                        else this._tauriLoadingImgs.delete(_lname);
-                    }).catch(() => { this._tauriLoadingImgs.delete(_lname); });
+                if (!this._wailsLoadingImgs) this._wailsLoadingImgs = new Set();
+                if (!this._wailsLoadingImgs.has(_lname)) {
+                    this._wailsLoadingImgs.add(_lname);
+                    _wails.core.invoke('resolve_path', { name: _lname }).then(fp => {
+                        if (fp) this.loadImageFromPath(fp, _lname).then(() => { this._fcLower = null; if (this._objImgCache) this._objImgCache.delete(imgName); this._wailsLoadingImgs.delete(_lname); this.requestRender(); }).catch(() => { this._wailsLoadingImgs.delete(_lname); });
+                        else this._wailsLoadingImgs.delete(_lname);
+                    }).catch(() => { this._wailsLoadingImgs.delete(_lname); });
                 }
             }
             const src = (resolved ? this.fileCache.images.get(resolved) : null) || `images/${imgName}`;
@@ -7453,12 +7453,12 @@ class LevelEditor {
                     const mngBlob = this.fileCache?.mngs?.get(imgName)
                         || this.fileCache?.mngs?.get(lowerImgName)
                         || [...(this.fileCache?.mngs?.entries?.() || [])].find(([k]) => k.toLowerCase() === lowerImgName)?.[1];
-                    const tauriPath = this._tauriPathIndex?.get(lowerImgName)
-                        || this._tauriPathIndex?.get(imgName)
-                        || [...(this._tauriPathIndex?.entries?.() || [])].find(([k]) => k.toLowerCase() === lowerImgName)?.[1];
+                    const wailsPath = this._wailsPathIndex?.get(lowerImgName)
+                        || this._wailsPathIndex?.get(imgName)
+                        || [...(this._wailsPathIndex?.entries?.() || [])].find(([k]) => k.toLowerCase() === lowerImgName)?.[1];
                     const _mngLoad = buf => MNG.play(buf).then(c => { this._mngAnimCache.set(imgName, c); obj._imgW = c.width; obj._imgH = c.height; this.requestRender(); }).catch(() => {});
                     if (mngBlob) { fetch(mngBlob).then(r => r.arrayBuffer()).then(_mngLoad).catch(() => {}); }
-                    else if (_isTauri && tauriPath) { _tauri.fs.readFile(tauriPath).then(d => _mngLoad(d.buffer)).catch(() => {}); }
+                    else if (_isWails && wailsPath) { _wails.fs.readFile(wailsPath).then(d => _mngLoad(d.buffer)).catch(() => {}); }
                     else { fetch(`images/${imgName}`).then(r => r.arrayBuffer()).then(_mngLoad).catch(() => {}); }
                 }
                 const c = this._mngAnimCache.get(imgName);
@@ -8657,7 +8657,7 @@ class LevelEditor {
         if (scheme === 'default') {
             if (window.monaco) monaco.editor.setTheme('graal-default');
             document.body.style.background = ''; document.body.style.color = '';
-            const tb = this.$('tauriBar'); if (tb) { tb.style.background = ''; tb.style.borderColor = ''; }
+            const tb = this.$('wailsBar'); if (tb) { tb.style.background = ''; tb.style.borderColor = ''; }
             this._schemeColors = null;
             localStorage.setItem('editorColorScheme', scheme); this._updateSchemeDropdown(scheme); window.refreshUtilityToolTheme?.(); return;
         }
@@ -8787,11 +8787,11 @@ class LevelEditor {
             #npcTitlebar { background: ${c.hover} !important; }
             #npcMonacoContainer, .monaco-editor, .monaco-editor-background, .monaco-editor .margin { background: ${c.bg} !important; }
             #elTitlebar, #esTitlebar, #signTitlebar, #lkTitlebar, #chTitlebar, #bdTitlebar { background: ${c.hover} !important; color: ${c.text} !important; }
-            #tauriBar { background: ${c.panel} !important; border-color: ${c.border} !important; }
-            #tauriBar button { background: transparent !important; color: ${c.text} !important; border-color: transparent !important; }
+            #wailsBar { background: ${c.panel} !important; border-color: ${c.border} !important; }
+            #wailsBar button { background: transparent !important; color: ${c.text} !important; border-color: transparent !important; }
             input[type="checkbox"] { accent-color: #4a9eff !important; }
-            #tauriBar button:hover { background: ${c.hover} !important; }
-            #tauriBar .tb-title span { color: ${c.text} !important; }
+            #wailsBar button:hover { background: ${c.hover} !important; }
+            #wailsBar .tb-title span { color: ${c.text} !important; }
             #tbBeautifyBtn img { filter: ${iconFilter} !important; }
             .tool-button.active { background: #4a9eff !important; color: #fff !important; border-color: #2a7eff !important; }
             .tool-button.active:hover { background: #5aaeff !important; }
@@ -9074,13 +9074,13 @@ class LevelEditor {
                 closeChoice();
             };
             choice.querySelector('#levelCssExampleSave').onclick = async () => {
-                if (_isTauri && _tauri?.dialog?.save && _tauri?.fs?.writeTextFile) {
-                    const path = await _tauri.dialog.save({
+                if (_isWails && _wails?.dialog?.save && _wails?.fs?.writeTextFile) {
+                    const path = await _wails.dialog.save({
                         defaultPath: 'example-theme.css',
                         title: 'Save Example CSS',
                         filters: [{ name: 'CSS', extensions: ['css'] }]
                     }).catch(() => null);
-                    if (path) await _tauri.fs.writeTextFile(path, exampleCSS).catch(err => console.warn('[levelCssExample save failed]', err));
+                    if (path) await _wails.fs.writeTextFile(path, exampleCSS).catch(err => console.warn('[levelCssExample save failed]', err));
                 } else {
                     const blob = new Blob([exampleCSS], { type: 'text/css' });
                     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'example-theme.css' });

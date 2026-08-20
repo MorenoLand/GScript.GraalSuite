@@ -347,10 +347,10 @@ class LevelGenEditor {
         }
         const blob = await new Promise(resolve => c.toBlob(resolve, 'image/png'));
         if (!blob) return;
-        if (typeof _isTauri !== 'undefined' && _isTauri && _tauri?.dialog?.save && _tauri?.fs?.writeFile) {
+        if (typeof _isWails !== 'undefined' && _isWails && _wails?.dialog?.save && _wails?.fs?.writeFile) {
             try {
-                const path = await _tauri.dialog.save({ defaultPath: 'map.png', title: 'Save Map Image', filters: [{ name: 'PNG Image', extensions: ['png'] }] });
-                if (path) await _tauri.fs.writeFile(path, new Uint8Array(await blob.arrayBuffer()));
+                const path = await _wails.dialog.save({ defaultPath: 'map.png', title: 'Save Map Image', filters: [{ name: 'PNG Image', extensions: ['png'] }] });
+                if (path) await _wails.fs.writeFile(path, new Uint8Array(await blob.arrayBuffer()));
             } catch (error) {
                 if (typeof showAlertDialog === 'function') showAlertDialog(`Could not save the map image: ${error.message}`);
                 else console.error('Could not save the map image:', error);
@@ -367,15 +367,15 @@ class LevelGenEditor {
 
     _showGenerate() {
         this._q('generateModal').style.display = 'flex';
-        const desktop = typeof _isTauri !== 'undefined' && _isTauri && _tauri?.fs?.writeTextFile;
+        const desktop = typeof _isWails !== 'undefined' && _isWails && _wails?.fs?.writeTextFile;
         this._q('outputRow').style.display = desktop ? 'grid' : 'none';
         this._q('confirmGenerateBtn').textContent = desktop ? 'Generate World' : 'Download World ZIP';
         this._q('generateStatus').textContent = `${this.width} x ${this.height} map: ${Math.ceil(this.width / 64)} x ${Math.ceil(this.height / 64)} levels${desktop ? '' : ' - downloads as a ZIP.'}`;
     }
 
     async _chooseOutputFolder() {
-        if (!(typeof _isTauri !== 'undefined' && _isTauri && _tauri?.dialog?.open)) return;
-        const path = await _tauri.dialog.open({ directory: true, multiple: false, title: 'Generate World To' }).catch(() => null);
+        if (!(typeof _isWails !== 'undefined' && _isWails && _wails?.dialog?.open)) return;
+        const path = await _wails.dialog.open({ directory: true, multiple: false, title: 'Generate World To' }).catch(() => null);
         if (path) this._q('outputFolderInput').value = path;
     }
 
@@ -556,7 +556,7 @@ class LevelGenEditor {
         const status = this._q('generateStatus');
         if (this.width % 64 || this.height % 64) { status.textContent = 'Map width and height must both be multiples of 64.'; return; }
         const output = this._q('outputFolderInput').value.trim(), prefix = this._q('prefixInput').value.trim();
-        const desktop = typeof _isTauri !== 'undefined' && _isTauri && _tauri?.fs?.writeTextFile;
+        const desktop = typeof _isWails !== 'undefined' && _isWails && _wails?.fs?.writeTextFile;
         if (!prefix || desktop && !output) { status.textContent = desktop ? 'Choose an output folder and filename prefix.' : 'Enter a filename prefix.'; return; }
         const cols = this.width / 64, rows = this.height / 64, linksEnabled = this._q('linksInput').checked, button = this._q('confirmGenerateBtn');
         button.disabled = true; status.textContent = 'Generating world...';
@@ -577,7 +577,7 @@ class LevelGenEditor {
             const names = Array.from({ length: rows }, (_, row) => Array.from({ length: cols }, (_, col) => `"${this._levelStem(prefix, this._levelName(col, row, cols, rows))}.nw"`).join(','));
             files.push([`${gmapName}.gmap`, `GRMAP001\r\nWIDTH ${cols}\r\nHEIGHT ${rows}\r\nLEVELNAMES\r\n${names.join('\r\n')}\r\nLEVELNAMESEND\r\n`]);
             if (desktop) {
-                for (const [name, text] of files) await _tauri.fs.writeTextFile(`${output}/${name}`, text);
+                for (const [name, text] of files) await _wails.fs.writeTextFile(`${output}/${name}`, text);
                 status.textContent = `Generated ${cols * rows} level${cols * rows === 1 ? '' : 's'} and ${gmapName}.gmap.`;
             } else {
                 const { default: JSZip } = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm'), zip = new JSZip();

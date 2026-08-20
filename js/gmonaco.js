@@ -4,10 +4,10 @@
     function ensureRequireReady() {
         if (typeof window.require === 'function' && typeof window.require.config === 'function') {
             const usingHttpHost = /^https?:/i.test(window.location.protocol || '');
-            const isTauriBundled = !!window.__TAURI__ && !usingHttpHost;
+            const isWailsBundled = !!window.__GSUITE__ && (!usingHttpHost || window.location.hostname === 'wails.localhost');
             window.require.config({
                 paths: {
-                    vs: isTauriBundled ? 'monaco-editor/min/vs' : 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs'
+                    vs: isWailsBundled ? 'monaco-editor/min/vs' : 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs'
                 }
             });
         }

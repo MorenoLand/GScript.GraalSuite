@@ -35,14 +35,14 @@
 body { background: #0a0010 !important; color: #e0d0ff !important; font-family: 'Courier New', monospace !important; }
 * { box-sizing: border-box; }
 
-/* ── Tauri titlebar ─────────────────────────────────────────── */
-#tauriBar { background: linear-gradient(90deg, #0d001a, #1a0030, #0d001a) !important; border-bottom: 1px solid #ff00ff44 !important; }
-#tauriBar .tb-title { color: #cc88ff !important; }
-#tauriBar button:not(.tb-winbtn) { background: #1a003a !important; color: #cc88ff !important; border-color: #550088 !important; }
-#tauriBar button:not(.tb-winbtn):hover { background: #330066 !important; color: #ff88ff !important; border-color: #ff00ff !important; box-shadow: 0 0 8px #ff00ff66 !important; }
-#tauriBar .tb-winbtn { background: transparent !important; color: #9966cc !important; }
-#tauriBar .tb-winbtn:hover { background: #330066 !important; color: #ff88ff !important; }
-#tauriBar .tb-close:hover { background: #6b1a1a !important; color: #ff4466 !important; }
+/* ── Wails titlebar ─────────────────────────────────────────── */
+#wailsBar { background: linear-gradient(90deg, #0d001a, #1a0030, #0d001a) !important; border-bottom: 1px solid #ff00ff44 !important; }
+#wailsBar .tb-title { color: #cc88ff !important; }
+#wailsBar button:not(.tb-winbtn) { background: #1a003a !important; color: #cc88ff !important; border-color: #550088 !important; }
+#wailsBar button:not(.tb-winbtn):hover { background: #330066 !important; color: #ff88ff !important; border-color: #ff00ff !important; box-shadow: 0 0 8px #ff00ff66 !important; }
+#wailsBar .tb-winbtn { background: transparent !important; color: #9966cc !important; }
+#wailsBar .tb-winbtn:hover { background: #330066 !important; color: #ff88ff !important; }
+#wailsBar .tb-close:hover { background: #6b1a1a !important; color: #ff4466 !important; }
 
 /* ── Toolbar ────────────────────────────────────────────────── */
 .toolbar { background: linear-gradient(90deg, #0d001a, #1a0030, #0d001a) !important; border-bottom: 2px solid #ff00ff66 !important; box-shadow: 0 2px 18px #ff00ff44 !important; padding: 6px 8px !important; gap: 6px !important; }

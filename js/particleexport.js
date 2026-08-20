@@ -9,10 +9,10 @@
     ctx.save(); ctx.translate(width / 2, height / 2); system.draw(ctx); ctx.restore();
   }
   async function save(blob, format) {
-    const filename = `particle-effect.${format}`, tauri = window.__TAURI__;
-    if (tauri?.dialog?.save && tauri?.fs?.writeFile) {
-      const path = await tauri.dialog.save({ defaultPath:filename, title:'Export Particle Animation', filters:[{name:format === 'gif' ? 'GIF Image' : 'WebM Video', extensions:[format]}] });
-      if (path) await tauri.fs.writeFile(path, new Uint8Array(await blob.arrayBuffer()));
+    const filename = `particle-effect.${format}`, wails = window.__GSUITE__;
+    if (wails?.dialog?.save && wails?.fs?.writeFile) {
+      const path = await wails.dialog.save({ defaultPath:filename, title:'Export Particle Animation', filters:[{name:format === 'gif' ? 'GIF Image' : 'WebM Video', extensions:[format]}] });
+      if (path) await wails.fs.writeFile(path, new Uint8Array(await blob.arrayBuffer()));
       return;
     }
     const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);

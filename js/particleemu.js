@@ -155,10 +155,10 @@ async function resolveWorkspaceParticleImage(name) {
   let source = workspaceParticleImage(name);
   if (source) return source;
   const editor = window.levelEditor;
-  const tauri = window._tauri;
-  if (!editor?.loadImageFromPath || !tauri?.core?.invoke) return null;
+  const wails = window.__GSUITE__;
+  if (!editor?.loadImageFromPath || !wails?.core?.invoke) return null;
   const key = String(name).split(/[\\/]/).pop().toLowerCase();
-  const path = editor._tauriPathIndex?.get(key) || await tauri.core.invoke('resolve_path', { name:key });
+  const path = editor._wailsPathIndex?.get(key) || await wails.core.invoke('resolve_path', { name:key });
   if (!path) return null;
   await editor.loadImageFromPath(path, key);
   return workspaceParticleImage(key);

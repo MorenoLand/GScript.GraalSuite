@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GSuite</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
+<script type="module" src="wails/runtime.js"></script>
+<script src="js/wails-bridge.js"></script>
 <script src="vendor/monaco-loader.js"></script>
 <script>
 (function() {
-    const _isTauri = !!window.__TAURI__;
-    if (_isTauri) {
+    const _isWails = !!window.__GSUITE__;
+    if (_isWails) {
         require.config({ paths: { vs: 'monaco-editor/min/vs' } });
         window.addEventListener('contextmenu', e => e.preventDefault());
     } else {
@@ -52,10 +54,10 @@
 </style>
 </head>
 <body>
-<div id="tauriBar">
-  <div class="tb-leading" data-tauri-drag-region></div>
+<div id="wailsBar">
+  <div class="tb-leading" data-wails-drag-region></div>
   <div class="tb-title"><img src="favicon.ico"><span id="tbTitle">GSuite</span></div>
-  <div class="tb-trailing" data-tauri-drag-region>
+  <div class="tb-trailing" data-wails-drag-region>
     <button id="tbParticleEmuBtn" title="Particle Emulator" onclick="injectParticleEmu()"><img src="icons/particleemu.png" width="14" height="14" style="image-rendering:pixelated;"></button>
     <button id="tbLevelGenBtn" title="Level Generator" onclick="typeof LevelGenEditor!=='undefined'&&LevelGenEditor.open()"><img src="icons/levelgen.ico" width="14" height="14" style="image-rendering:pixelated;"></button>
     <button id="tbShapesBtn" title="Setshape2 Editor" onclick="typeof SetshapeEditor!=='undefined'&&SetshapeEditor.open()"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACbUlEQVQ4y52P20uTcRzGn9972MEdHBvOw1JZZk4dTjyXhGEGUgkWFJH1P3QTQXgVne6UThCEFxVBYWVgWCCBQ6IM0cBkouLxTbc5NJzv67b39/66SG2pQfXcfPnC83y/n4fgP1RZd8JAeJ4nIDH+X8OFpQdyKE2063T6S5QmwgIAVNUdE0yWVCMhAGMbTgYQAjAAK5FwS2Zm5sGhgf6LvCC0rq4s3fBV13Z+HRwAceXuE1PtzisAvAD5/R0BwBisNkfxKbfsGdHcseHRQF35oYbHfW9ePZweH2kTIqEFc15Rme/chTOKOz+/eiMFgDCAEQBsKbzk6H/WQWrNU3pDZUW3v7fnqiJH72mUMmHzGdVojijq8vCrAQAgHoth/EMv0uk3+OfNpMwxnDbrSi9YNJrIwuwk45KJ2bYZi63jXVcXrMHPWLSWYH/jWfi/u+LrTGyKhCQOAITtlTcnpRSTYxNw5XkgGS1objyCGSmMZUXt9fe8OOnM2KPuOJAsjufg8RZCmplDia8IgigCAHhB0ADEQ4vzP327hdkGB8fxyHbnQhBFKLKMdUUBRzh9fVOLbtO7KwHZtklzEtpv3eyU12QZYLA50i+X1tRfH/74XtuVIJkkGo3iwe07jxi0+0Vl5a8bmk+vBr586jNZbW1bBIQQHiA81bQdB1SVQlW1YNXho63dTzuOuwuK07wVNXaAtwOAoFFKOY7kTEwHfRPTwR0UaiIBg8nsefv8ybW9Hm+9McWUPTo0GLLY7IGtunpDSkaK2VL4pyrOrNzzdmeWh+O4OGOANDX2UllbvRtamGUEfyczCDEk7ctgjALAD3gS6nZ20OQgAAAAAElFTkSuQmCC" width="14" height="14"></button>
@@ -123,7 +125,7 @@
 </div>
 <script>
 (function() {
-    const _isTauri = !!window.__TAURI__;
+    const _isWails = !!window.__GSUITE__;
     let _currentApp = null;
     let _utilityShellApp = 'level';
 
@@ -323,9 +325,9 @@
         }
     });
 
-    if (_isTauri) {
-        document.body.classList.add('tauri-app');
-        const _w = window.__TAURI__.window.getCurrentWindow();
+    if (_isWails) {
+        document.body.classList.add('wails-app');
+        const _w = window.__GSUITE__.window.getCurrentWindow();
         document.getElementById('tbMin').onclick = () => _w.minimize();
         document.getElementById('tbMax').onclick = () => _w.toggleMaximize();
         document.getElementById('tbClose').onclick = () => _w.close();
@@ -337,8 +339,8 @@
         document.title = nextTitle;
         const tbTitle = document.getElementById('tbTitle');
         if (tbTitle) tbTitle.textContent = nextTitle;
-        if (_isTauri) {
-            window.__TAURI__?.window?.getCurrentWindow?.().setTitle(nextTitle).catch?.(() => {});
+        if (_isWails) {
+            window.__GSUITE__?.window?.getCurrentWindow?.().setTitle(nextTitle).catch?.(() => {});
         }
     }
 
@@ -864,29 +866,29 @@
             if (!document.querySelector('script[src="js/levelgeneditor.js"]')) { const lgs = document.createElement('script'); lgs.src = 'js/levelgeneditor.js'; document.head.appendChild(lgs); }
             if (!document.querySelector('script[src="js/gmapgenerator.js"]')) { const gmgs = document.createElement('script'); gmgs.src = 'js/gmapgenerator.js'; document.head.appendChild(gmgs); }
             if (!document.querySelector('script[src="js/beautifytool.js"]')) { const bts = document.createElement('script'); bts.src = 'js/beautifytool.js'; document.head.appendChild(bts); }
-            if (_isTauri) { const ra = document.getElementById('btnRegisterAssoc'); if (ra) ra.style.display = ''; }
-            if (_isTauri) {
+            if (_isWails) { const ra = document.getElementById('btnRegisterAssoc'); if (ra) ra.style.display = ''; }
+            if (_isWails) {
                 setTimeout(async () => {
                     try {
-                        const { check } = window.__TAURI__.updater;
+                        const { check } = window.__GSUITE__.updater;
                         const update = await check();
                         if (update?.available) {
                             const ok = confirm(`Update ${update.version} available. Install now?`);
-                            if (ok) { await window.__TAURI__.core.invoke('do_update'); }
+                            if (ok) { await window.__GSUITE__.core.invoke('do_update'); }
                         }
                     } catch(e) {}
                 }, 3000);
             }
-            if (_isTauri) {
-                window.__TAURI__.event.listen('open-file', e => {
+            if (_isWails) {
+                window.__GSUITE__.event.listen('open-file', e => {
                     const fp = e.payload;
                     if (!fp) return;
-                    _tauriOpenFile(fp);
+                    _wailsOpenFile(fp);
                 });
-                window.__TAURI__.event.listen('tauri://drag-drop', async e => {
+                window.__GSUITE__.event.listen('wails://drag-drop', async e => {
                     const paths = e.payload?.paths || [];
-                    if (await _routeSetshapeTauriDrop(paths)) return;
-                    for (const fp of paths) _tauriOpenFile(fp);
+                    if (await _routeSetshapeWailsDrop(paths)) return;
+                    for (const fp of paths) _wailsOpenFile(fp);
                 });
             }
         });
@@ -953,23 +955,23 @@
     }, true);
     document.addEventListener('pointerdown', _hideTooltip, true);
 
-    async function _tauriOpenFile(fp) {
+    async function _wailsOpenFile(fp) {
         const name = fp.replace(/\\/g,'/').split('/').pop();
         const ext = name.split('.').pop().toLowerCase();
         if (ext === 'gani') {
             switchToTab('gani');
             while (typeof parseGani !== 'function' || typeof addTab !== 'function') await new Promise(r => setTimeout(r, 100));
-            const text = await window.__TAURI__.fs.readTextFile(fp).catch(() => null);
+            const text = await window.__GSUITE__.fs.readTextFile(fp).catch(() => null);
             if (text) { const ani = parseGani(text); if (ani) { ani.fileName = name; ani.fullPath = fp; addTab(ani, name); } }
             return;
         }
         switchToTab('level');
         while (!window.levelEditor) await new Promise(r => setTimeout(r, 100));
         if (ext === 'graal' || ext === 'zelda') {
-            const data = await window.__TAURI__.fs.readFile(fp).catch(() => null);
+            const data = await window.__GSUITE__.fs.readFile(fp).catch(() => null);
             if (data) window.levelEditor.openFromBuffer(data.buffer, name, fp);
         } else {
-            const text = await window.__TAURI__.fs.readTextFile(fp).catch(() => null);
+            const text = await window.__GSUITE__.fs.readTextFile(fp).catch(() => null);
             if (text) window.levelEditor.openFromText(text, name, fp);
         }
     }
@@ -996,7 +998,7 @@
         return true;
     }
 
-    async function _routeSetshapeTauriDrop(paths) {
+    async function _routeSetshapeWailsDrop(paths) {
         if (!_setshapeIsOpen()) return false;
         const editor = window.__setshapeEditorInstance;
         if (!editor || typeof editor._importImagePath !== 'function') return false;
@@ -1076,10 +1078,10 @@
             injectLevelGen();
             switchToTab('level');
         };
-        if (_isTauri) {
-            window.__TAURI__?.core?.invoke('get_open_file_arg').then(fa => {
+        if (_isWails) {
+            window.__GSUITE__?.core?.invoke('get_open_file_arg').then(fa => {
                 init();
-                if (fa) _tauriOpenFile(fa);
+                if (fa) _wailsOpenFile(fa);
             }).catch(() => init());
         } else { init(); }
         const waitForLevelEditor = () => {
@@ -1274,10 +1276,10 @@
             choice.querySelector('[data-css-example-cancel]').onclick = closeChoice;
             choice.querySelector('[data-css-example-open]').onclick = () => { setValue(exampleCSS); closeChoice(); };
             choice.querySelector('[data-css-example-save]').onclick = async () => {
-                const _tauri = window.__TAURI__;
-                if (_tauri?.dialog?.save && _tauri?.fs?.writeTextFile) {
-                    const path = await _tauri.dialog.save({ defaultPath: 'example-theme.css', title: 'Save Example CSS', filters: [{ name: 'CSS', extensions: ['css'] }] }).catch(() => null);
-                    if (path) await _tauri.fs.writeTextFile(path, exampleCSS).catch(err => console.warn('[sharedCssExample save failed]', err));
+                const _wails = window.__GSUITE__;
+                if (_wails?.dialog?.save && _wails?.fs?.writeTextFile) {
+                    const path = await _wails.dialog.save({ defaultPath: 'example-theme.css', title: 'Save Example CSS', filters: [{ name: 'CSS', extensions: ['css'] }] }).catch(() => null);
+                    if (path) await _wails.fs.writeTextFile(path, exampleCSS).catch(err => console.warn('[sharedCssExample save failed]', err));
                 } else {
                     const blob = new Blob([exampleCSS], { type: 'text/css' });
                     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'example-theme.css' });
@@ -1338,7 +1340,7 @@
                     </div>
                 </div>
             </div>
-            <div style="display:${_isTauri ? 'none' : 'inline-flex'};align-items:center;gap:0;">
+            <div style="display:${_isWails ? 'none' : 'inline-flex'};align-items:center;gap:0;">
                 <button title="Particle Emulator" id="${p}btnParticleEmu" onclick="injectParticleEmu()"><img src="icons/particleemu.png" width="14" height="14" style="image-rendering:pixelated;"></button>
                 <button title="Level Generator" id="${p}btnLevelGen" onclick="typeof LevelGenEditor!=='undefined'&&LevelGenEditor.open()"><img src="icons/levelgen.ico" width="14" height="14" style="image-rendering:pixelated;"></button>
                 <button title="Setshape2 Editor" id="${p}btnSetshape2" onclick="typeof SetshapeEditor!=='undefined'&&SetshapeEditor.open()"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACbUlEQVQ4y52P20uTcRzGn9972MEdHBvOw1JZZk4dTjyXhGEGUgkWFJH1P3QTQXgVne6UThCEFxVBYWVgWCCBQ6IM0cBkouLxTbc5NJzv67b39/66SG2pQfXcfPnC83y/n4fgP1RZd8JAeJ4nIDH+X8OFpQdyKE2063T6S5QmwgIAVNUdE0yWVCMhAGMbTgYQAjAAK5FwS2Zm5sGhgf6LvCC0rq4s3fBV13Z+HRwAceXuE1PtzisAvAD5/R0BwBisNkfxKbfsGdHcseHRQF35oYbHfW9ePZweH2kTIqEFc15Rme/chTOKOz+/eiMFgDCAEQBsKbzk6H/WQWrNU3pDZUW3v7fnqiJH72mUMmHzGdVojijq8vCrAQAgHoth/EMv0uk3+OfNpMwxnDbrSi9YNJrIwuwk45KJ2bYZi63jXVcXrMHPWLSWYH/jWfi/u+LrTGyKhCQOAITtlTcnpRSTYxNw5XkgGS1objyCGSmMZUXt9fe8OOnM2KPuOJAsjufg8RZCmplDia8IgigCAHhB0ADEQ4vzP327hdkGB8fxyHbnQhBFKLKMdUUBRzh9fVOLbtO7KwHZtklzEtpv3eyU12QZYLA50i+X1tRfH/74XtuVIJkkGo3iwe07jxi0+0Vl5a8bmk+vBr586jNZbW1bBIQQHiA81bQdB1SVQlW1YNXho63dTzuOuwuK07wVNXaAtwOAoFFKOY7kTEwHfRPTwR0UaiIBg8nsefv8ybW9Hm+9McWUPTo0GLLY7IGtunpDSkaK2VL4pyrOrNzzdmeWh+O4OGOANDX2UllbvRtamGUEfyczCDEk7ctgjALAD3gS6nZ20OQgAAAAAElFTkSuQmCC" width="14" height="14"></button>
@@ -1687,7 +1689,7 @@
                     <label onclick="window._editor&&window._editor.deleteEdgeLinks()" style="cursor:pointer">Delete Edge Links</label>
                     <label onclick="window._editor&&window._editor.trimScriptEndings()" style="cursor:pointer">Trim Script Endings</label>
                     <label onclick="window._editor&&window._editor.trimSignEndings()" style="cursor:pointer">Trim Sign Endings</label>
-                    <label id="btnRegisterAssoc" style="cursor:pointer;display:none;" onclick="if(typeof _tauri!=='undefined')_tauri.core.invoke('register_file_associations').then(m=>alert(m)).catch(e=>alert('Error: '+e))">Register File Associations</label>
+                    <label id="btnRegisterAssoc" style="cursor:pointer;display:none;" onclick="window.__GSUITE__?.core.invoke('register_file_associations').then(m=>alert(m)).catch(e=>alert('Error: '+e))">Register File Associations</label>
                 </div>
             </div>
             <button id="btnScreenshot" title="Screenshot" class="tool-button"><i class="fas fa-camera"></i></button>

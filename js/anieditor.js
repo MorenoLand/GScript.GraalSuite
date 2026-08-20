@@ -448,14 +448,14 @@ window.isGaniTabDirty = function(tab) {
 };
 
 function updateGaniTitle() {
-    const _isTauri = window.__TAURI__ != null;
+    const _isWails = window.__GSUITE__ != null;
     if (currentAnimation && currentAnimation.fileName) {
         document.title = currentAnimation.fileName;
-        if (_isTauri) { window.__TAURI__.window.getCurrentWindow().setTitle(currentAnimation.fileName); }
+        if (_isWails) { window.__GSUITE__.window.getCurrentWindow().setTitle(currentAnimation.fileName); }
         const t = document.getElementById('tbTitle'); if (t) t.textContent = currentAnimation.fileName;
     } else {
         document.title = 'GSuite';
-        if (_isTauri) { window.__TAURI__.window.getCurrentWindow().setTitle('GSuite'); }
+        if (_isWails) { window.__GSUITE__.window.getCurrentWindow().setTitle('GSuite'); }
         const t = document.getElementById('tbTitle'); if (t) t.textContent = 'GSuite';
     }
 }
@@ -1416,12 +1416,12 @@ function getSpriteImage(sprite) {
             }
         }
     }
-    if (!img && _isTauri && imageKey && !_failedImageLoads.has(imageKey)) {
+    if (!img && _isWails && imageKey && !_failedImageLoads.has(imageKey)) {
         const _wpi = workspacePathIndex.get(imageKey);
         if (_wpi) {
             loadImageFromPath(_wpi, imageKey).then(() => { imageLibrary.has(imageKey) && _scheduleRedraw(); }).catch(() => { _failedImageLoads.add(imageKey); });
         } else {
-            _tauri.core.invoke('resolve_path', { name: imageKey }).then(filePath => {
+            _wails.core.invoke('resolve_path', { name: imageKey }).then(filePath => {
                 if (filePath) loadImageFromPath(filePath, imageKey).then(() => { imageLibrary.has(imageKey) && _scheduleRedraw(); }).catch(() => { _failedImageLoads.add(imageKey); });
             }).catch(() => { _failedImageLoads.add(imageKey); });
         }
@@ -2119,10 +2119,10 @@ async function loadMovieActorGani(keys) {
     try {
         let text = null, foundKey = keys[0];
         for (const key of keys) {
-            if (_isTauri) {
+            if (_isWails) {
                 const file = (localFileCache.ganiFiles || []).find(g => (g.name || "").toLowerCase() === key || (g.path || "").replace(/\\/g, "/").toLowerCase().endsWith("/" + key));
-                const path = file?.path || workspacePathIndex.get(key) || await _tauri.core.invoke("resolve_path", {name: key}).catch(() => null);
-                if (path) text = await _tauri.fs.readTextFile(path).catch(() => null);
+                const path = file?.path || workspacePathIndex.get(key) || await _wails.core.invoke("resolve_path", {name: key}).catch(() => null);
+                if (path) text = await _wails.fs.readTextFile(path).catch(() => null);
                 if (!text) {
                     const response = await fetch('ganis/' + key).catch(() => null);
                     if (response?.ok) text = await response.text();
@@ -2168,7 +2168,7 @@ function _soundMimeForName(name) {
 }
 
 async function _loadWorkspaceSoundAudio(fileName) {
-    if (!_isTauri || !fileName) return null;
+    if (!_isWails || !fileName) return null;
     const key = String(fileName).toLowerCase();
     const base = key.replace(/\.[^.]+$/, "");
     const path = (localFileCache.sounds || []).find(p => {
@@ -2176,7 +2176,7 @@ async function _loadWorkspaceSoundAudio(fileName) {
         return name === key || (!/\.[^.]+$/.test(key) && name.replace(/\.[^.]+$/, "") === base);
     });
     if (!path) return null;
-    const data = await _tauri.fs.readFile(path).catch(() => null);
+    const data = await _wails.fs.readFile(path).catch(() => null);
     if (!data) return null;
     const name = path.replace(/\\/g, "/").split("/").pop();
     const audio = new Audio(URL.createObjectURL(new Blob([data], {type: _soundMimeForName(name)})));
@@ -3507,14 +3507,14 @@ function loadImage(file) {
     });
 }
 
-var _isTauri = window.__TAURI__ != null;
-var _tauri = _isTauri ? window.__TAURI__ : null;
+var _isWails = window.__GSUITE__ != null;
+var _wails = _isWails ? window.__GSUITE__ : null;
 let workspacePathIndex = new Map();
 let _failedImageLoads = new Set();
 let _lazyRedrawPending = false;
 function _scheduleRedraw() { if (!_lazyRedrawPending) { _lazyRedrawPending = true; requestAnimationFrame(() => { _lazyRedrawPending = false; redraw(); }); } }
 async function loadImageFromPath(filePath, name) {
-    const data = await _tauri.fs.readFile(filePath);
+    const data = await _wails.fs.readFile(filePath);
     const isMng = name.toLowerCase().endsWith('.mng');
     if (isMng) {
         const header = data.slice(0, 8);
@@ -3552,13 +3552,13 @@ async function resolveGaniLevelTilesetImage(level, sourcePath = "") {
     const tilesetName = (level?.tilesetName || "pics1.png").trim() || "pics1.png";
     const key = tilesetName.toLowerCase();
     if (imageLibrary.has(key)) return imageLibrary.get(key);
-    if (_isTauri) {
+    if (_isWails) {
         const sourceDir = sourcePath ? sourcePath.replace(/[\\/][^\\/]*$/, "") : "";
         const sameDir = sourceDir ? sourceDir + "\\" + tilesetName : "";
         let path = null;
         if (sameDir) path = await loadImageFromPath(sameDir, key).then(() => sameDir).catch(() => null);
         if (!path) path = workspacePathIndex.get(key) || null;
-        if (!path) path = await _tauri.core.invoke("resolve_path", {name: key}).catch(() => null);
+        if (!path) path = await _wails.core.invoke("resolve_path", {name: key}).catch(() => null);
         if (path && !imageLibrary.has(key)) await loadImageFromPath(path, key).catch(() => null);
         if (imageLibrary.has(key)) return imageLibrary.get(key);
     }
@@ -3637,7 +3637,7 @@ async function setGaniCanvasLevelBackgroundFromData(name, ext, data, sourcePath 
     const bg = await buildGaniCanvasLevelBackground(level, name, sourcePath);
     if (!bg) throw new Error("Could not render level background.");
     canvasLevelBackground = bg;
-    if (_isTauri && sourcePath) localStorage.setItem("ganiCanvasLevelBackgroundPath", sourcePath);
+    if (_isWails && sourcePath) localStorage.setItem("ganiCanvasLevelBackgroundPath", sourcePath);
     if (restorePosition) restoreGaniCanvasLevelBackgroundPosition(); else {
         localStorage.removeItem("ganiCanvasLevelBackgroundX");
         localStorage.removeItem("ganiCanvasLevelBackgroundY");
@@ -3651,10 +3651,10 @@ async function setGaniCanvasLevelBackgroundFromPath(path, restorePosition = fals
     const name = path.replace(/\\/g, "/").split("/").pop();
     const ext = name.split(".").pop().toLowerCase();
     if (ext === "graal" || ext === "zelda") {
-        const data = await _tauri.fs.readFile(path);
+        const data = await _wails.fs.readFile(path);
         await setGaniCanvasLevelBackgroundFromData(name, ext, data, path, restorePosition);
     } else {
-        const text = await _tauri.fs.readTextFile(path);
+        const text = await _wails.fs.readTextFile(path);
         await setGaniCanvasLevelBackgroundFromData(name, ext, text, path, restorePosition);
     }
 }
@@ -3668,7 +3668,7 @@ async function applyGaniCanvasLevelTilesetImage(img, name, path = "", persist = 
     bg.y = old.y;
     bg.tilesetPath = path || "";
     canvasLevelBackground = bg;
-    if (persist && _isTauri && path) localStorage.setItem("ganiCanvasLevelBackgroundTilesetPath", path);
+    if (persist && _isWails && path) localStorage.setItem("ganiCanvasLevelBackgroundTilesetPath", path);
     updateGaniCanvasLevelBackgroundTitle();
     redraw();
 }
@@ -3676,8 +3676,8 @@ async function applyGaniCanvasLevelTilesetImage(img, name, path = "", persist = 
 async function loadGaniCanvasLevelTileset() {
     try {
         if (!canvasLevelBackground) throw new Error("Set a level background first.");
-        if (_isTauri) {
-            const path = await _tauri.dialog.open({multiple: false, filters: [{name: "Images", extensions: ["png", "gif", "jpg", "jpeg", "webp", "bmp"]}]});
+        if (_isWails) {
+            const path = await _wails.dialog.open({multiple: false, filters: [{name: "Images", extensions: ["png", "gif", "jpg", "jpeg", "webp", "bmp"]}]});
             if (!path) return;
             const name = path.replace(/\\/g, "/").split("/").pop();
             const img = await loadImageFromPath(path, name.toLowerCase());
@@ -3704,8 +3704,8 @@ async function loadGaniCanvasLevelTileset() {
 
 async function pickGaniCanvasLevelBackground() {
     try {
-        if (_isTauri) {
-            const path = await _tauri.dialog.open({multiple: false, filters: [{name: "Graal Levels", extensions: ["nw", "graal", "zelda"]}]});
+        if (_isWails) {
+            const path = await _wails.dialog.open({multiple: false, filters: [{name: "Graal Levels", extensions: ["nw", "graal", "zelda"]}]});
             if (!path) return;
             await setGaniCanvasLevelBackgroundFromPath(path);
             return;
@@ -3785,7 +3785,7 @@ function showGaniCanvasBackgroundMenu(e) {
 }
 
 async function restoreGaniCanvasLevelBackground() {
-    if (!_isTauri) return;
+    if (!_isWails) return;
     const path = localStorage.getItem("ganiCanvasLevelBackgroundPath");
     if (!path) return;
     await setGaniCanvasLevelBackgroundFromPath(path, true).catch(() => clearGaniCanvasLevelBackground());
@@ -3802,19 +3802,19 @@ async function loadWorkspaceFromDisk(dirPath) {
     workingDirectory = ext;
     lastWorkingDirectory = ext;
     localStorage.setItem("ganiEditorLastWorkingDir", lastWorkingDirectory);
-    window._tauriLastDir = dirPath;
+    window._wailsLastDir = dirPath;
     workspaceImageKeys.clear();
     workspacePathIndex = new Map();
     _failedImageLoads.clear();
     localFileCache = { ganis: [], sounds: [], ganiFiles: [] };
-    localFileCache._isTauri = true;
+    localFileCache._isWails = true;
 
     if (window._workspaceScanUnlisten) {
         window._workspaceScanUnlisten();
         window._workspaceScanUnlisten = null;
     }
 
-    window._workspaceScanUnlisten = await _tauri.event.listen('workspace_chunk', (event) => {
+    window._workspaceScanUnlisten = await _wails.event.listen('workspace_chunk', (event) => {
         const chunk = event.payload;
         chunk.image_keys.forEach(n => workspaceImageKeys.add(n));
         chunk.gani_files.forEach(([n]) => workspaceImageKeys.add(n));
@@ -3837,23 +3837,23 @@ async function loadWorkspaceFromDisk(dirPath) {
         }
     });
 
-    await _tauri.core.invoke('scan_workspace', { dir: dirPath });
+    await _wails.core.invoke('scan_workspace', { dir: dirPath });
 }
 
 async function restoreWorkspaceFromCache() {
-    const cached = await _tauri.core.invoke('load_workspace_cache').catch(() => null);
+    const cached = await _wails.core.invoke('load_workspace_cache').catch(() => null);
     if (!cached) return false;
     const dirPath = cached.dir;
     const ext = dirPath.split(/[\\/]/).pop();
     workingDirectory = ext;
     lastWorkingDirectory = ext;
     localStorage.setItem("ganiEditorLastWorkingDir", lastWorkingDirectory);
-    window._tauriLastDir = dirPath;
+    window._wailsLastDir = dirPath;
     workspaceImageKeys.clear();
     workspacePathIndex = new Map();
     _failedImageLoads.clear();
     localFileCache = { ganis: [], sounds: [], ganiFiles: [] };
-    localFileCache._isTauri = true;
+    localFileCache._isWails = true;
     const imageExts = new Set(['png','gif','jpg','jpeg','webp','bmp','mng']);
     const soundExts = new Set(['wav','mp3','ogg','mid','midi']);
     cached.entries.forEach(([name, path, crc]) => {
@@ -3873,12 +3873,12 @@ async function restoreWorkspaceFromCache() {
     return true;
 }
 
-async function tauriOpenDialog(opts) {
-    return _tauri.dialog.open(opts);
+async function wailsOpenDialog(opts) {
+    return _wails.dialog.open(opts);
 }
 
-async function tauriReadTextFile(filePath) {
-    return _tauri.fs.readTextFile(filePath);
+async function wailsReadTextFile(filePath) {
+    return _wails.fs.readTextFile(filePath);
 }
 
 let _spriteListData = [];
@@ -5857,14 +5857,14 @@ function switchTab(index) {
     updateDefaultsTable();
     ensureShadowSprite(currentAnimation);
     saveSession();
-    const _isTauri = window.__TAURI__ != null;
+    const _isWails = window.__GSUITE__ != null;
     if (currentAnimation && currentAnimation.fileName) {
         document.title = currentAnimation.fileName;
-        if (_isTauri) { window.__TAURI__.window.getCurrentWindow().setTitle(currentAnimation.fileName); }
+        if (_isWails) { window.__GSUITE__.window.getCurrentWindow().setTitle(currentAnimation.fileName); }
         const t = document.getElementById('tbTitle'); if (t) t.textContent = currentAnimation.fileName;
     } else {
         document.title = 'GSuite';
-        if (_isTauri) { window.__TAURI__.window.getCurrentWindow().setTitle('GSuite'); }
+        if (_isWails) { window.__GSUITE__.window.getCurrentWindow().setTitle('GSuite'); }
         const t = document.getElementById('tbTitle'); if (t) t.textContent = 'GSuite';
     }
 }
@@ -6435,7 +6435,7 @@ async function restoreSession() {
 }
 
 async function restoreGaniTabsFromSharedState() {
-    if (!_isTauri || !window.__TAURI__?.fs) return false;
+    if (!_isWails || !window.__GSUITE__?.fs) return false;
     try {
         const raw = localStorage.getItem("graalSuiteTabs");
         const tabs = raw ? JSON.parse(raw) : [];
@@ -6443,7 +6443,7 @@ async function restoreGaniTabsFromSharedState() {
         if (!ganiTabs.length) return false;
         animations = [];
         for (const tab of ganiTabs) {
-            const text = await window.__TAURI__.fs.readTextFile(tab.data.fullPath).catch(() => null);
+            const text = await window.__GSUITE__.fs.readTextFile(tab.data.fullPath).catch(() => null);
             if (!text) continue;
             const ani = parseGani(text);
             if (!ani) continue;
@@ -6735,7 +6735,7 @@ async function initGaniEditorStartup() {
     const criticalImages = ["sprites.png", "body.png", "head19.png", "shield1.png"];
     await Promise.all(criticalImages.filter(f => !imageLibrary.has(f.toLowerCase())).map(f => loadImageFromUrl(`images/${f}`, f.toLowerCase()).catch(() => {})));
     await refreshLocalFileCache();
-    if (_isTauri) await restoreWorkspaceFromCache();
+    if (_isWails) await restoreWorkspaceFromCache();
     await loadLocalImages();
     await restoreGaniCanvasLevelBackground();
     resizeCanvas();
@@ -9440,8 +9440,8 @@ async function initGaniEditorStartup() {
         input.click();
     };
     $("btnWorkingDir").onclick = async () => {
-        if (_isTauri) {
-            const selected = await tauriOpenDialog({ directory: true, multiple: false, title: "Select Working Directory" });
+        if (_isWails) {
+            const selected = await wailsOpenDialog({ directory: true, multiple: false, title: "Select Working Directory" });
             if (selected) await loadWorkspaceFromDisk(selected);
             return;
         }
@@ -9496,10 +9496,10 @@ async function initGaniEditorStartup() {
         redraw();
     };
     $("btnImportSprites").onclick = async () => {
-        if (_isTauri) {
-            const selected = await tauriOpenDialog({ multiple: false, filters: [{ name: 'Gani Files', extensions: ['gani'] }] });
+        if (_isWails) {
+            const selected = await wailsOpenDialog({ multiple: false, filters: [{ name: 'Gani Files', extensions: ['gani'] }] });
             if (!selected) return;
-            const text = await tauriReadTextFile(selected);
+            const text = await wailsReadTextFile(selected);
             const fname = selected.split(/[\\/]/).pop();
             if (/[\x00-\x08\x0e-\x1f]/.test(text.substring(0, 256))) { showAlertDialog(`${fname} is not a valid plain-text .gani file`); return; }
             await doImportSprites(text, fname);
@@ -9784,7 +9784,7 @@ async function initGaniEditorStartup() {
             if (oldStyle) oldStyle.remove();
             document.body.style.background = "";
             document.body.style.color = "";
-            const _tb = $('tauriBar'); if (_tb) { _tb.style.background = ''; _tb.style.borderColor = ''; }
+            const _tb = $('wailsBar'); if (_tb) { _tb.style.background = ''; _tb.style.borderColor = ''; }
             ["--timeline-frame-bg","--timeline-frame-selected-bg","--timeline-frame-multi-bg","--quadrant-divider","--timeline-ruler-bg","--timeline-ruler-tick","--timeline-ruler-text"].forEach(v => document.documentElement.style.removeProperty(v));
             const settingsDialog = $("settingsDialog");
             const aboutDialog = $("infoDialog");
@@ -10030,10 +10030,10 @@ async function initGaniEditorStartup() {
             #infoClose:hover, #aboutClose:hover { background: ${buttonHover} !important; }
             .info-tab-btn { color: ${colors.text} !important; border-color: ${colors.border} !important; }
             .info-tab-btn.active { color: ${colors.text} !important; background: ${colors.panel} !important; }
-            #tauriBar { background: ${colors.panel} !important; border-color: ${colors.border} !important; }
-            #tauriBar button { background: transparent !important; color: ${colors.text} !important; border-color: transparent !important; }
-            #tauriBar button:hover { background: ${colors.hover} !important; }
-            #tauriBar .tb-title span { color: ${colors.text} !important; }
+            #wailsBar { background: ${colors.panel} !important; border-color: ${colors.border} !important; }
+            #wailsBar button { background: transparent !important; color: ${colors.text} !important; border-color: transparent !important; }
+            #wailsBar button:hover { background: ${colors.hover} !important; }
+            #wailsBar .tb-title span { color: ${colors.text} !important; }
             .tool-button.active { background: #4a9eff !important; color: #fff !important; border-color: #2a7eff !important; }
             .tool-button.active:hover { background: #5aaeff !important; }
             .dialog-titlebar { background: ${colors.panel} !important; border-color: ${colors.border} !important; }
@@ -10669,7 +10669,7 @@ async function initGaniEditorStartup() {
     const settingsSelectionBorderOpacity = $("settingsSelectionBorderOpacity");
     const settingsSelectionBorderOpacityLabel = $("settingsSelectionBorderOpacityLabel");
     if (btnSettings && settingsDialog) {
-        if (settingsSystemGroup) settingsSystemGroup.style.display = _isTauri ? "" : "none";
+        if (settingsSystemGroup) settingsSystemGroup.style.display = _isWails ? "" : "none";
         const settingsFont = $("settingsFont");
         const settingsFontSize = $("settingsFontSize");
         const settingsFontStyle = $("settingsFontStyle");
@@ -11052,7 +11052,7 @@ async function initGaniEditorStartup() {
                 settingsAutoSave.textContent = newValue ? "✓" : " ";
             };
         }
-        if (_isTauri && settingsRegisterAssoc) {
+        if (_isWails && settingsRegisterAssoc) {
             settingsRegisterAssoc.onclick = async () => {
                 settingsRegisterAssoc.disabled = true;
                 if (settingsRegisterAssocStatus) {
@@ -11060,7 +11060,7 @@ async function initGaniEditorStartup() {
                     settingsRegisterAssocStatus.textContent = "Registering...";
                 }
                 try {
-                    const msg = await _tauri.core.invoke("register_file_associations");
+                    const msg = await _wails.core.invoke("register_file_associations");
                     if (settingsRegisterAssocStatus) {
                         settingsRegisterAssocStatus.style.color = "#6c6";
                         settingsRegisterAssocStatus.textContent = msg;
@@ -11808,7 +11808,7 @@ ${editableActions.map(a => kbRow(a.label, a.key)).join("")}
         const btnAbout = $("btnAbout");
         if (btnAbout) {
             btnAbout.onclick = () => window.openInfoDialog?.("about");
-            if (_isTauri) btnAbout.style.display = 'none';
+            if (_isWails) btnAbout.style.display = 'none';
         }
     }
     document.querySelectorAll(".settings-tab-btn").forEach(btn => { btn.onclick = () => switchSettingsTab(btn.dataset.tab); });
@@ -14991,8 +14991,8 @@ function showAddSpriteDialog(editSprite = null, preSelectImage = null) {
         }
     }
     $("addSpriteBrowse").onclick = async () => {
-        if (_isTauri) {
-            const selected = await tauriOpenDialog({ multiple: false, filters: [{ name: 'Images', extensions: ['png', 'gif', 'jpg', 'jpeg', 'webp', 'bmp', 'mng'] }] });
+        if (_isWails) {
+            const selected = await wailsOpenDialog({ multiple: false, filters: [{ name: 'Images', extensions: ['png', 'gif', 'jpg', 'jpeg', 'webp', 'bmp', 'mng'] }] });
             if (selected) {
                 const name = selected.split(/[\\/]/).pop();
                 selectedExternalImageName = name;
@@ -17129,9 +17129,9 @@ async function _renderExportFrames(ani, dirIdx, scale, padding, bgColor, crop, s
 }
 
 async function _animExportSave(data, filename, mimeType, ext, filters) {
-    if (_isTauri) {
-        const path = await _tauri.dialog.save({ defaultPath: filename, filters: [{ name: filters, extensions: [ext] }] });
-        if (path) await _tauri.fs.writeFile(path, data instanceof Uint8Array ? data : new Uint8Array(data));
+    if (_isWails) {
+        const path = await _wails.dialog.save({ defaultPath: filename, filters: [{ name: filters, extensions: [ext] }] });
+        if (path) await _wails.fs.writeFile(path, data instanceof Uint8Array ? data : new Uint8Array(data));
     } else {
         const url = URL.createObjectURL(new Blob([data], { type: mimeType }));
         const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
@@ -17163,7 +17163,7 @@ async function _exportWebM(ani, dirIdx, scale, padding, bgColor) {
         recorder.onstop = async () => {
             try {
                 const blob = new Blob(chunks, { type: mimeType });
-                if (_isTauri) {
+                if (_isWails) {
                     const buf = await blob.arrayBuffer();
                     await _animExportSave(new Uint8Array(buf), filename, mimeType, 'webm', 'WebM Video');
                 } else {

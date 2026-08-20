@@ -31,22 +31,32 @@ function bumpVersion(version) {
   return parts.join('.');
 }
 
-function updateCargoToml(version) {
-  const file = path.join(root, 'src-tauri', 'Cargo.toml');
+function updateGoVersion(version) {
+  const file = path.join(root, 'main.go');
   const text = fs.readFileSync(file, 'utf8');
-  fs.writeFileSync(file, text.replace(/^version\s*=\s*"[^"]+"/m, `version = "${version}"`));
+  fs.writeFileSync(file, text.replace(/const appVersion = "[^"]+"/, `const appVersion = "${version}"`));
 }
 
-function updateCargoLock(version) {
-  const file = path.join(root, 'src-tauri', 'Cargo.lock');
+function updateBuildConfig(version) {
+  const file = path.join(root, 'build', 'config.yml');
+  if (!fs.existsSync(file)) return;
   const text = fs.readFileSync(file, 'utf8');
-  fs.writeFileSync(file, text.replace(/(\[\[package\]\]\r?\nname = "GSuite"\r?\nversion = ")[^"]+(")/, `$1${version}$2`));
+  fs.writeFileSync(file, text.replace(/productVersion:\s*[^\r\n]+/, `productVersion: ${version}`));
 }
 
-function updateTauriConfig(version) {
-  const config = readJson('src-tauri/tauri.conf.json');
-  config.version = version;
-  writeJson('src-tauri/tauri.conf.json', config);
+function updateWindowsResources(version) {
+  const info = readJson('build/windows/info.json');
+  info.fixed = info.fixed || {};
+  info.fixed.file_version = version;
+  info.fixed.product_version = version;
+  Object.values(info.info || {}).forEach(values => {
+    values.FileVersion = version;
+    values.ProductVersion = version;
+  });
+  writeJson('build/windows/info.json', info);
+  const manifestFile = path.join(root, 'build', 'windows', 'manifest.xml');
+  const manifest = fs.readFileSync(manifestFile, 'utf8');
+  fs.writeFileSync(manifestFile, manifest.replace(/(<assemblyIdentity version=")[^"]+(")/, `$1${version}.0$2`));
 }
 
 const pkg = readJson('package.json');
@@ -57,8 +67,8 @@ if (!versionPattern.test(nextVersion)) throw new Error(`Unsupported version form
 pkg.version = nextVersion;
 writeJson('package.json', pkg);
 
-updateCargoToml(nextVersion);
-updateCargoLock(nextVersion);
-updateTauriConfig(nextVersion);
+updateGoVersion(nextVersion);
+updateBuildConfig(nextVersion);
+updateWindowsResources(nextVersion);
 
 console.log(nextVersion);

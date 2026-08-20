@@ -1,16 +1,19 @@
 {
   "name": "gsuite",
-  "version": "0.1.83",
+  "version": "0.1.84",
   "description": "GSuite - A web-based suite of tools for development.",
   "main": "anieditor.js",
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "bump:patch": "node js/bump-version.js patch",
     "version:set": "node js/bump-version.js set",
-    "dev": "node js/build-web.js && pnpm exec tauri dev",
-    "build": "node js/build-web.js && pnpm exec tauri build",
+    "dev": "pnpm run wails:assets && wails3 dev",
+    "build": "pnpm run wails:assets && wails3 build",
+    "wails:bindings": "go mod tidy && wails3 generate runtime -d . && node js/wails-bindings.js",
+    "wails:assets": "pnpm run wails:bindings && node js/build-web.js",
+    "build:wails": "node js/build-web.js",
     "start": "node server.js",
-    "tauri": "tauri"
+    "wails": "wails3"
   },
   "repository": {
     "type": "git",
@@ -24,12 +27,8 @@
     "url": "https://github.com/MorenoLand/GScript.GSuite/issues"
   },
   "homepage": "https://github.com/MorenoLand/GScript.GSuite#readme",
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.10.1"
-  },
+  "devDependencies": {},
   "dependencies": {
-    "@tauri-apps/plugin-dialog": "^2.6.0",
-    "@tauri-apps/plugin-fs": "^2.4.5",
     "monaco-editor": "^0.52.0"
   }
 }

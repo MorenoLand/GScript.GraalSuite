@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=GSuite
+Comment=GSuite desktop editor
+# The Exec line includes %u to pass the URL to the application
+Exec=GSuite %u
+Terminal=false
+Type=Application
+Icon=GSuite
+MimeType=application/x-graal-level;application/x-graal-map;
+Categories=Utility;
+StartupWMClass=GSuite

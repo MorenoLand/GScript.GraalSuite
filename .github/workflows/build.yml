@@ -2,39 +2,46 @@ name: Build GSuite
 
 on:
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g. v0.1.1)'
+        description: Version to build, for example 0.1.84
         required: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            upx: true
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            upx: false
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            upx: false
-          - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            upx: true
-
-    runs-on: ${{ matrix.os }}
+            goos: windows
+            goarch: amd64
+            artifact: gsuite-windows-x64
+          - os: macos-15-intel
+            goos: darwin
+            goarch: amd64
+            artifact: gsuite-macos-x64
+          - os: ubuntu-24.04
+            goos: linux
+            goarch: amd64
+            artifact: gsuite-linux-x64
 
     steps:
       - uses: actions/checkout@v5
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -42,79 +49,65 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install Node deps
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install Wails CLI
+        shell: pwsh
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.10
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path (go env GOPATH) 'bin')
+
+      - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Sync package version
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
         shell: bash
+        env:
+          RAW_VERSION: ${{ github.event.inputs.version || github.ref_name }}
         run: |
           version="${RAW_VERSION#v}"
           node js/bump-version.js set "$version"
-          echo "Building GSuite $version"
-        env:
-          RAW_VERSION: ${{ github.event.inputs.version || github.ref_name }}
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
-
-      - name: Linux system deps
-        if: matrix.os == 'ubuntu-22.04'
+      - name: Install Linux WebView dependencies
+        if: matrix.goos == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 
-      - name: Install UPX (Windows)
-        if: matrix.upx && matrix.os == 'windows-latest'
-        run: choco install upx -y
+      - name: Install UPX
+        if: matrix.goos == 'windows'
+        run: choco install upx -y --no-progress
 
-      - name: Install UPX (Linux)
-        if: matrix.upx && matrix.os == 'ubuntu-22.04'
-        run: sudo apt-get install -y upx
+      - name: Build
+        shell: bash
+        run: wails3 build GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Package macOS app
+        if: matrix.goos == 'darwin'
+        shell: bash
+        run: wails3 package GOOS=darwin GOARCH=amd64
+
+      - name: Package Linux app
+        if: matrix.goos == 'linux'
+        shell: bash
+        run: wails3 package GOOS=linux GOARCH=amd64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          tagName: ${{ github.event.inputs.version || github.ref_name }}
-          releaseName: GSuite ${{ github.event.inputs.version || github.ref_name }}
-          releaseBody: See changelog for details.
-          releaseDraft: false
-          prerelease: false
-          args: --target ${{ matrix.target }}
-
-      - name: UPX compress (Windows)
-        if: matrix.upx && matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          $exe = Get-ChildItem "src-tauri/target/${{ matrix.target }}/release/" -Filter "*.exe" | Where-Object { $_.Name -notlike "*setup*" } | Select-Object -First 1
-          if ($exe) { upx --best --lzma $exe.FullName }
-
-      - name: Upload portable exe (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          $exe = Get-ChildItem "src-tauri/target/${{ matrix.target }}/release/" -Filter "*.exe" | Where-Object { $_.Name -notlike "*setup*" } | Select-Object -First 1
-          if ($exe) {
-            $tag = "${{ github.event.inputs.version || github.ref_name }}"
-            gh release upload "$tag" $exe.FullName --clobber
-          } else {
-            Write-Host "No portable exe found to upload."
-          }
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: UPX compress (Linux)
-        if: matrix.upx && matrix.os == 'ubuntu-22.04'
-        run: |
-          bin=$(find src-tauri/target/${{ matrix.target }}/release -maxdepth 1 -type f -executable | head -1)
-          if [ -n "$bin" ]; then upx --best --lzma "$bin"; fi
+          name: ${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            bin/GSuite.exe
+            bin/GSuite
+            bin/GSuite.app
+            bin/*.AppImage
+            bin/*.deb
+            bin/*.rpm
+            bin/*.pkg.tar.zst
